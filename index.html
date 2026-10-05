@@ -1,0 +1,2377 @@
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPK Sarawak — Sistem Pengurusan KPI & Tempoh Permohonan</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        navy: {50:'#eef3f9',100:'#d8e3f0',800:'#142d4e',900:'#0b1f35',950:'#071426'},
+        gold: {300:'#e8d5a3',400:'#d9bd7a',500:'#c9a86a',600:'#b8934f',700:'#96763a'},
+        mint: {500:'#0ea5a0',600:'#0b8581'}
+      },
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"','Inter','sans-serif'],
+        mono: ['"JetBrains Mono"','monospace']
+      },
+      boxShadow: {
+        card:'0 10px 30px -10px rgba(11,31,53,.18)',
+        pop:'0 20px 60px -15px rgba(11,31,53,.35)'
+      }
+    }
+  }
+}
+</script>
+<style>
+*{scrollbar-width:thin;scrollbar-color:#c9a86a #eef3f9}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:#eef3f9}
+::-webkit-scrollbar-thumb{background:linear-gradient(#c9a86a,#96763a);border-radius:99px}
+body{font-family:"Plus Jakarta Sans",Inter,sans-serif;background:#f2f5f9;color:#0b1f35}
+.login-bg{background:linear-gradient(135deg,rgba(7,20,38,.92) 0%,rgba(20,45,78,.88) 45%,rgba(11,31,53,.94) 100%),url('https://images.unsplash.com/photo-1508001300512-49d3b2e0a24a?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat}
+.batikk{background-image:radial-gradient(circle at 20% 20%,rgba(201,168,106,.18) 0 2px,transparent 3px),radial-gradient(circle at 80% 40%,rgba(201,168,106,.12) 0 2px,transparent 3px),radial-gradient(circle at 40% 80%,rgba(255,255,255,.06) 0 2px,transparent 3px);background-size:42px 42px,58px 58px,36px 36px}
+.gold-line{background:linear-gradient(90deg,#c9a86a,#f5e6bd,#c9a86a)}
+.navbtn{transition:.22s}
+.navbtn.active{background:linear-gradient(135deg,#c9a86a,#b8934f);color:#071426!important;box-shadow:0 8px 20px -6px rgba(201,168,106,.6)}
+.navbtn.active svg{stroke:#071426}
+.navbtn:not(.active):hover{background:rgba(255,255,255,.08)}
+.badge{font-size:11px;font-weight:700;letter-spacing:.04em;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.b-green{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.b-red{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.b-amber{background:#fef9c3;color:#854d0e;border:1px solid #fde047}
+.b-blue{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+.b-gray{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1}
+.sheet-tab{font-size:12px;font-weight:800;letter-spacing:.06em;padding:9px 18px;border-radius:10px 10px 0 0;cursor:pointer;border:1px solid #d8e3f0;border-bottom:none;color:#64748b;background:#eef3f9}
+.sheet-tab.active{background:#0b1f35;color:#f5e6bd;border-color:#0b1f35}
+.excel-table th{background:#0b1f35;color:#f5e6bd;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:12px 10px;white-space:nowrap;position:sticky;top:0;z-index:5}
+.excel-table td{font-size:13px;padding:11px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.excel-table tr:nth-child(even) td{background:#f8fafc}
+.excel-table tr:hover td{background:#fffbeb}
+.cal-day{aspect-ratio:1/1;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;transition:.18s;border:1.5px solid transparent;position:relative}
+.cal-day:hover{transform:translateY(-2px);box-shadow:0 8px 18px -8px rgba(0,0,0,.25)}
+.cal-day.weekend{background:#f1f5f9;color:#94a3b8}
+.cal-day.holiday{background:linear-gradient(135deg,#991b1b,#dc2626);color:#fff;box-shadow:0 8px 18px -6px rgba(220,38,38,.5)}
+.cal-day.workday{background:#fff;border-color:#e2e8f0;color:#0b1f35}
+.cal-day.today{outline:3px solid #c9a86a;outline-offset:2px}
+.cal-day.other{opacity:.28;pointer-events:none}
+.modal-bg{background:rgba(7,20,38,.62);backdrop-filter:blur(8px)}
+.modal-card{animation:pop .35s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{transform:translateY(24px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.fadeUp{animation:fadeUp .5s ease both}
+.toast{animation:toastIn .35s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes toastIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+input,select,textarea{outline:none}
+input:focus,select:focus,textarea:focus{border-color:#c9a86a!important;box-shadow:0 0 0 3px rgba(201,168,106,.22)}
+.kpi-card{position:relative;overflow:hidden}
+.kpi-card::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%)}
+select optgroup{font-weight:800}
+.mono{font-family:"JetBrains Mono",monospace}
+#loader{transition:opacity .5s}
+.loader-bar{animation:load 1.2s ease-in-out infinite}
+@keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+.chip{font-size:11px;font-weight:700;background:#0b1f35;color:#f5e6bd;padding:3px 9px;border-radius:999px}
+.section-title{font-weight:800;letter-spacing:-.02em}
+.divider-gold{height:3px;background:linear-gradient(90deg,#c9a86a,transparent);border-radius:99px}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 0 0 rgba(52,211,153,.7);animation:pl 2s infinite}
+@keyframes pl{0%{box-shadow:0 0 0 0 rgba(52,211,153,.6)}70%{box-shadow:0 0 0 10px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+@media print{
+  #sidebar,#topbar,#loginView,.no-print{display:none!important}
+  #appView{margin:0!important}
+  main{padding:0!important}
+  body{background:#fff}
+  .print-full{box-shadow:none!important;border:1px solid #ddd!important}
+  .page{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader" class="fixed inset-0 z-[100] bg-navy-950 flex flex-col items-center justify-center text-center px-6">
+  <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-700 flex items-center justify-center shadow-pop mb-5">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#071426" stroke-width="2.2"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+  </div>
+  <h1 class="text-white font-extrabold text-xl tracking-tight">SPK Sarawak</h1>
+  <p class="text-gold-300 text-xs font-semibold tracking-[.25em] mt-1">SISTEM PENGURUSAN KPI</p>
+  <div class="w-56 h-1.5 bg-white/10 rounded-full mt-6 overflow-hidden"><div class="loader-bar h-full w-2/5 bg-gradient-to-r from-gold-500 to-gold-300 rounded-full"></div></div>
+  <p class="text-white/50 text-xs mt-3">Menyambung ke pelayan tempatan (localhost)...</p>
+</div>
+
+<div id="toastRoot" class="fixed top-5 right-5 z-[120] space-y-3 w-[340px] max-w-[90vw]"></div>
+
+<!-- LOGIN VIEW -->
+<div id="loginView" class="min-h-screen hidden lg:grid lg:grid-cols-2">
+  <div class="login-bg batikk relative hidden lg:flex flex-col justify-between p-12 text-white overflow-hidden">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-gold-300 to-gold-600 flex items-center justify-center shadow-pop">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#071426" stroke-width="2.2"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div>
+        <p class="text-[11px] tracking-[.3em] text-gold-300 font-bold">KERAJAAN SARAWAK</p>
+        <h1 class="font-extrabold text-2xl leading-tight">SPK — Sistem Pengurusan<br>KPI Permohonan</h1>
+      </div>
+    </div>
+    <div class="space-y-6 max-w-lg">
+      <div class="gold-line h-[3px] w-24 rounded-full"></div>
+      <h2 class="text-4xl font-extrabold leading-[1.1]">Kira tempoh hari <span class="text-gold-300">secara automatik,</span> lapor dalam Excel.</h2>
+      <p class="text-white/70 leading-relaxed">Isi jenis permohonan, tarikh mohon &amp; tarikh lulus — makro mengira hari bekerja (tolak hujung minggu &amp; tarikh dikecualikan admin) terus ke Sheet Raw Data. Admin kawal cuti, KPI &amp; pengguna.</p>
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-white/10 border border-white/15 rounded-2xl p-4"><p class="text-2xl font-extrabold text-gold-300">25</p><p class="text-xs text-white/70 font-semibold">Jenis Permohonan</p></div>
+        <div class="bg-white/10 border border-white/15 rounded-2xl p-4"><p class="text-2xl font-extrabold text-gold-300">Auto</p><p class="text-xs text-white/70 font-semibold">Kira Hari Bekerja</p></div>
+        <div class="bg-white/10 border border-white/15 rounded-2xl p-4"><p class="text-2xl font-extrabold text-gold-300">XLSX</p><p class="text-xs text-white/70 font-semibold">Eksport Laporan</p></div>
+      </div>
+      <div class="flex items-center gap-3 text-xs text-white/60">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Pelayan tempatan aktif • Kuching • Samarahan • Serian • Sri Aman • Sibu
+      </div>
+    </div>
+    <div class="flex items-center justify-between text-[11px] text-white/50 font-semibold">
+      <span>© 2026 Pentadbiran Bahagian Sarawak</span>
+      <span class="mono">v4.0 • localhost:3000 • Macro Engine NETWORKDAYS</span>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-center p-6 sm:p-12 bg-[#f2f5f9]">
+    <div class="w-full max-w-[480px]">
+      <div class="lg:hidden flex items-center gap-3 mb-6">
+        <div class="w-11 h-11 rounded-xl bg-navy-900 flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c9a86a" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/></svg>
+        </div>
+        <div><p class="text-[10px] tracking-[.25em] font-bold text-gold-600">KERAJAAN SARAWAK</p><p class="font-extrabold">SPK Sistem KPI Permohonan</p></div>
+      </div>
+
+      <div class="bg-white rounded-3xl shadow-card border border-slate-200 overflow-hidden">
+        <div class="p-7 pb-0">
+          <div class="grid grid-cols-2 bg-slate-100 rounded-2xl p-1.5 mb-6">
+            <button id="tabLogin" class="py-2.5 rounded-xl text-sm font-extrabold bg-navy-900 text-white shadow">Log Masuk</button>
+            <button id="tabRegister" class="py-2.5 rounded-xl text-sm font-extrabold text-slate-500">Daftar Akaun</button>
+          </div>
+
+          <!-- LOGIN -->
+          <div id="paneLogin">
+            <h3 class="font-extrabold text-xl">Selamat kembali</h3>
+            <p class="text-sm text-slate-500 mb-5">Masuk untuk isi permohonan &amp; jana laporan. Data diselaras ke pelayan tempatan.</p>
+            <label class="text-xs font-bold text-slate-600">ID PENGGUNA</label>
+            <input id="loginId" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold" placeholder="cth: ADMIN001 / USER001" value="ADMIN001">
+            <label class="text-xs font-bold text-slate-600 mt-4 block">KATA LALUAN</label>
+            <div class="relative mt-1">
+              <input id="loginPass" type="password" class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold pr-12" placeholder="••••••••" value="admin123">
+              <button onclick="togglePass('loginPass')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-navy-900">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <button onclick="doLogin()" class="mt-6 w-full py-3.5 rounded-xl bg-gradient-to-r from-navy-900 to-navy-800 text-white font-extrabold text-sm tracking-wide hover:opacity-95 shadow-card flex items-center justify-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a86a" stroke-width="2.2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+              LOG MASUK SISTEM
+            </button>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+              <button onclick="quickLogin('ADMIN001','admin123')" class="py-2.5 rounded-xl border-2 border-gold-500/40 bg-amber-50 text-xs font-extrabold text-navy-900 hover:bg-amber-100">Masuk sebagai ADMIN<br><span class="mono font-semibold text-[11px]">ADMIN001 / admin123</span></button>
+              <button onclick="quickLogin('USER001','user123')" class="py-2.5 rounded-xl border-2 border-slate-200 text-xs font-extrabold text-navy-900 hover:bg-slate-50">Masuk sebagai PENGGUNA<br><span class="mono font-semibold text-[11px]">USER001 / user123</span></button>
+            </div>
+          </div>
+
+          <!-- REGISTER -->
+          <div id="paneRegister" class="hidden">
+            <h3 class="font-extrabold text-xl">Daftar akaun baharu</h3>
+            <p class="text-sm text-slate-500 mb-5">Akaun pengguna boleh log masuk di semua peranti selepas dicipta.</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="col-span-2"><label class="text-xs font-bold text-slate-600">NAMA PENUH</label><input id="regName" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold" placeholder="cth: Ali Bin Ahmad"></div>
+              <div><label class="text-xs font-bold text-slate-600">ID PENGGUNA</label><input id="regId" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold mono" placeholder="cth: USER010"></div>
+              <div><label class="text-xs font-bold text-slate-600">KATA LALUAN</label><input id="regPass" type="password" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold" placeholder="Min. 6 aksara"></div>
+              <div class="col-span-2"><label class="text-xs font-bold text-slate-600">PEJABAT</label><select id="regOffice" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold"></select></div>
+            </div>
+            <button onclick="doRegister()" class="mt-5 w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold text-sm">CIPTA AKAUN PENGGUNA</button>
+          </div>
+        </div>
+        <div class="m-4 mt-6 rounded-2xl bg-navy-950 text-white p-5 flex gap-4 items-start">
+          <div class="w-9 h-9 shrink-0 rounded-xl bg-gold-500 flex items-center justify-center font-extrabold text-navy-950">i</div>
+          <p class="text-xs leading-relaxed text-white/75"><b class="text-gold-300">Aliran Admin:</b> Pergi ke <b>Admin → Pengguna → Kemaskini Pengguna</b> untuk ubah nama, ID, pejabat, peranan, kata laluan atau jenis permohonan yang dikendalikan.</p>
+        </div>
+      </div>
+      <p class="text-center text-[11px] text-slate-400 font-semibold mt-4">Data disimpan dalam pangkalan data pelayan tempatan (localhost) &amp; diselaras ke peranti pengguna • Sedia eksport Excel (.xlsx)</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP VIEW -->
+<div id="appView" class="hidden min-h-screen">
+  <div id="sidebarOverlay" onclick="toggleSidebar(false)" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="fixed left-0 top-0 h-full w-[272px] bg-navy-950 text-white z-40 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 batikk">
+    <div class="p-5 flex items-center gap-3 border-b border-white/10">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-gold-300 to-gold-600 flex items-center justify-center shrink-0">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#071426" stroke-width="2.2"><path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div class="min-w-0">
+        <p class="text-[10px] tracking-[.25em] text-gold-300 font-bold">SARAWAK • SPK</p>
+        <p class="font-extrabold text-sm leading-tight truncate">Pengurusan KPI<br>Permohonan</p>
+      </div>
+    </div>
+
+    <div class="px-4 pt-4">
+      <div class="rounded-2xl bg-white/[.06] border border-white/10 p-3 flex items-center gap-3">
+        <div id="userAvatar" class="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-700 flex items-center justify-center font-extrabold text-navy-950 shrink-0">A</div>
+        <div class="min-w-0 flex-1">
+          <p id="userName" class="text-sm font-extrabold truncate">—</p>
+          <p class="text-[11px] text-white/60 truncate"><span id="userRoleBadge" class="chip">ADMIN</span> <span id="userOffice" class="text-white/60">—</span></p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto p-4 space-y-1.5 text-[13.5px] font-bold">
+      <p class="text-[10px] tracking-[.25em] text-white/40 font-extrabold px-3 pt-2">MENU UTAMA</p>
+      <button data-page="dashboard" onclick="showPage('dashboard')" class="navbtn active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard</button>
+      <button data-page="borang" onclick="showPage('borang')" class="navbtn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Permohonan Baharu</button>
+      <button data-page="rawdata" onclick="showPage('rawdata')" class="navbtn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Sheet Raw Data</button>
+      <button data-page="laporan" onclick="showPage('laporan')" class="navbtn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg> Laporan &amp; Excel</button>
+
+      <div id="adminMenuLabel">
+        <p class="text-[10px] tracking-[.25em] text-gold-300/80 font-extrabold px-3 pt-4">ADMIN</p>
+        <button data-page="cuti" onclick="showPage('cuti')" class="navbtn adminOnly w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Kalendar Cuti <span class="ml-auto text-[10px] bg-red-500/90 px-2 py-0.5 rounded-full" id="cutiCountBadge">0</span></button>
+        <button data-page="jenis" onclick="showPage('jenis')" class="navbtn adminOnly w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20l9-9a2.1 2.1 0 00-3-3l-9 9-4 4 4-1z"/></svg> Jenis &amp; KPI</button>
+        <button data-page="pengguna" onclick="showPage('pengguna')" class="navbtn adminOnly w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> Pengguna</button>
+      </div>
+
+      <p class="text-[10px] tracking-[.25em] text-white/40 font-extrabold px-3 pt-4">SISTEM</p>
+      <button data-page="tetapan" onclick="showPage('tetapan')" class="navbtn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Tetapan &amp; Pelayan</button>
+      <button data-page="panduan" onclick="showPage('panduan')" class="navbtn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white/85">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg> Panduan Macro</button>
+    </nav>
+
+    <div class="p-4 border-t border-white/10">
+      <button onclick="doLogout()" class="w-full py-3 rounded-xl bg-white/10 hover:bg-red-600 font-extrabold text-sm flex items-center justify-center gap-2 transition">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> Log Keluar
+      </button>
+    </div>
+  </aside>
+
+  <div class="lg:ml-[272px] min-h-screen flex flex-col">
+    <!-- TOPBAR -->
+    <header id="topbar" class="sticky top-0 z-20 bg-white/85 backdrop-blur border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center gap-3">
+      <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 rounded-xl bg-navy-950 text-white flex items-center justify-center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="min-w-0">
+        <h2 id="pageTitle" class="font-extrabold text-lg leading-tight truncate">Dashboard</h2>
+        <p id="topbarDate" class="text-xs text-slate-500 font-semibold">—</p>
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
+          <span class="pulse-dot"></span>
+          <div class="leading-tight">
+            <p class="text-[10px] font-extrabold text-emerald-800 tracking-wider">PELAYAN TEMPATAN</p>
+            <p id="syncTime" class="text-[10px] font-semibold text-emerald-700 mono">belum disegerak</p>
+          </div>
+        </div>
+        <button onclick="showPage('borang')" class="no-print hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 text-sm font-extrabold shadow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> Permohonan Baharu
+        </button>
+        <button onclick="toggleNotif(event)" class="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-slate-200">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0b1f35" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+          <span id="notifCount" class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-extrabold flex items-center justify-center">0</span>
+        </button>
+      </div>
+      <div id="notifDrop" class="hidden absolute right-4 sm:right-8 top-[68px] w-[330px] bg-white rounded-2xl shadow-pop border border-slate-200 p-4 z-50"></div>
+    </header>
+
+    <main class="flex-1 p-4 sm:p-8 max-w-[1280px] w-full mx-auto">
+
+      <!-- DASHBOARD -->
+      <section id="page-dashboard" class="page space-y-6">
+        <div class="rounded-3xl bg-navy-950 text-white p-6 sm:p-8 relative overflow-hidden batikk shadow-card fadeUp">
+          <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-gold-500/20 blur-2xl"></div>
+          <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
+            <div class="flex-1">
+              <p class="text-[11px] tracking-[.25em] text-gold-300 font-bold" id="dashGreetOffice">PEJABAT DAERAH KUCHING</p>
+              <h1 class="text-2xl sm:text-3xl font-extrabold mt-1" id="dashGreet">Selamat pagi, Pentadbir</h1>
+              <p class="text-white/65 text-sm mt-2 max-w-xl">Pantau pematuhan KPI semua 25 jenis permohonan. Makro menolak cuti umum &amp; hujung minggu yang ditanda admin sebelum mengira tempoh hari.</p>
+              <div class="flex flex-wrap gap-2.5 mt-5">
+                <button onclick="showPage('borang')" class="px-5 py-2.5 rounded-xl bg-gold-500 text-navy-950 font-extrabold text-sm">+ Isi Permohonan</button>
+                <button onclick="showPage('laporan');setTimeout(generateReport,120)" class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 font-extrabold text-sm hover:bg-white/20">Jana Laporan Excel</button>
+                <button onclick="openMacro()" class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 font-extrabold text-sm hover:bg-white/20">Lihat Formula Macro</button>
+              </div>
+            </div>
+            <div class="bg-white/[.07] border border-white/15 rounded-2xl p-5 w-full lg:w-[300px]">
+              <p class="text-xs font-bold text-white/60">KADAR PEMATUHAN KPI</p>
+              <p class="text-4xl font-extrabold mt-1"><span id="statPct">0</span><span class="text-lg text-gold-300">%</span></p>
+              <div class="h-2.5 bg-white/15 rounded-full mt-3 overflow-hidden"><div id="complianceBar" class="h-full bg-gradient-to-r from-gold-500 to-emerald-400 rounded-full transition-all" style="width:0%"></div></div>
+              <p id="complianceSub" class="text-xs text-white/60 mt-2">— menepati daripada — selesai</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="kpi-card bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <p class="text-[11px] font-extrabold tracking-widest text-slate-500">JUMLAH PERMOHONAN</p>
+            <p id="statTotal" class="text-3xl font-extrabold mt-1">0</p>
+            <p class="text-xs text-slate-500 font-semibold mt-1">Semua rekod raw data</p>
+          </div>
+          <div class="kpi-card bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <p class="text-[11px] font-extrabold tracking-widest text-emerald-600">MENEPATI KPI</p>
+            <p id="statTepati" class="text-3xl font-extrabold mt-1 text-emerald-700">0</p>
+            <p class="text-xs text-slate-500 font-semibold mt-1">Selesai dalam tempoh</p>
+          </div>
+          <div class="kpi-card bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <p class="text-[11px] font-extrabold tracking-widest text-red-500">LEWAT / MELEBIHI</p>
+            <p id="statLewat" class="text-3xl font-extrabold mt-1 text-red-700">0</p>
+            <p class="text-xs text-slate-500 font-semibold mt-1">Perlu perhatian</p>
+          </div>
+          <div class="kpi-card bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <p class="text-[11px] font-extrabold tracking-widest text-amber-600">DALAM PROSES</p>
+            <p id="statProses" class="text-3xl font-extrabold mt-1 text-amber-700">0</p>
+            <p class="text-xs text-slate-500 font-semibold mt-1">Belum diluluskan</p>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <h4 class="font-extrabold text-sm">Status Permohonan</h4><div class="divider-gold w-16 my-2"></div>
+            <div class="h-[240px]"><canvas id="chartCompliance"></canvas></div>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5 lg:col-span-2">
+            <h4 class="font-extrabold text-sm">Trend Permohonan 2026 (Bil. vs % Pematuhan)</h4><div class="divider-gold w-16 my-2"></div>
+            <div class="h-[240px]"><canvas id="chartTrend"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5 lg:col-span-2">
+            <h4 class="font-extrabold text-sm">Purata Hari Bekerja vs Sasaran KPI (Ikut Kategori)</h4><div class="divider-gold w-16 my-2"></div>
+            <div class="h-[260px]"><canvas id="chartKategori"></canvas></div>
+          </div>
+          <div class="space-y-4">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+              <h4 class="font-extrabold text-sm">Cuti / Tarikh Dikecualikan Terdekat</h4><div class="divider-gold w-16 my-2"></div>
+              <div id="upcomingCutiList" class="space-y-2 text-sm"></div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+              <h4 class="font-extrabold text-sm">Permohonan Lewat Terkini</h4><div class="divider-gold w-16 my-2"></div>
+              <div id="topLewatList" class="space-y-2 text-sm"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+          <div class="p-5 flex items-center justify-between">
+            <div><h4 class="font-extrabold">Rekod Terkini</h4><p class="text-xs text-slate-500 font-semibold">5 permohonan paling baharu dalam sheet raw data</p></div>
+            <button onclick="showPage('rawdata')" class="text-xs font-extrabold text-gold-700 hover:underline">Lihat Semua →</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full excel-table">
+              <thead><tr><th>No Rujukan</th><th>Jenis</th><th>Pemohon</th><th>Mohon → Lulus</th><th>Hari</th><th>Status</th></tr></thead>
+              <tbody id="recentTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- BORANG -->
+      <section id="page-borang" class="page hidden space-y-6">
+        <div class="grid lg:grid-cols-5 gap-6">
+          <div class="lg:col-span-3 bg-white rounded-3xl border border-slate-200 shadow-card p-6 sm:p-8">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="section-title text-xl">Borang Permohonan Baharu</h3>
+                <p class="text-sm text-slate-500 font-medium">Lengkapkan jenis, tarikh mohon &amp; tarikh lulus. Tekan <b>Generate</b> untuk makro mengira tempoh &amp; simpan ke Raw Data.</p>
+              </div>
+              <span class="chip shrink-0">MACRO v4.0</span>
+            </div>
+            <div class="divider-gold my-4"></div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div><label class="text-xs font-extrabold text-slate-600">TAPIS KATEGORI</label><select id="fKategori" onchange="onKategoriChange()" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"></select></div>
+              <div><label class="text-xs font-extrabold text-slate-600">NO. RUJUKAN (AUTO)</label><input id="fRujukan" readonly class="mt-1 w-full border-2 border-dashed border-gold-500/60 bg-amber-50 rounded-xl px-3 py-2.5 text-sm font-bold mono"></div>
+            </div>
+
+            <div class="mt-4">
+              <label class="text-xs font-extrabold text-slate-600">CARI JENIS PERMOHONAN (25 JENIS)</label>
+              <input id="jenisSearch" oninput="renderJenisOptions()" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold" placeholder="Taip cth: senapang, BNR, probet, PKLB, aduan...">
+            </div>
+            <div class="mt-2"><select id="fJenis" onchange="onJenisChange()" size="7" class="w-full border-2 border-slate-200 rounded-xl px-2 py-2 text-[13px] font-semibold bg-slate-50"></select></div>
+
+            <div id="jenisInfoCard" class="mt-3 rounded-2xl bg-navy-950 text-white p-4 text-sm hidden"></div>
+            <div id="kpiAutoBox" class="mt-3 hidden rounded-2xl border-2 border-gold-500/50 bg-amber-50 p-4 text-[13px]"></div>
+
+            <div class="grid sm:grid-cols-2 gap-4 mt-4">
+              <div class="sm:col-span-2"><label class="text-xs font-extrabold text-slate-600">NAMA PEMOHON / SYARIKAT / PEMBEKAL *</label><input id="fPemohon" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold" placeholder="cth: Dayang Nurul Binti Ahmad"></div>
+              <div><label class="text-xs font-extrabold text-slate-600">NO. KP / ROC</label><input id="fKp" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold mono" placeholder="cth: 880101-13-XXXX"></div>
+              <div><label class="text-xs font-extrabold text-slate-600">NO. TELEFON</label><input id="fTel" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold mono" placeholder="cth: 012-3456789"></div>
+              <div><label class="text-xs font-extrabold text-slate-600">PEJABAT</label><select id="fPejabat" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"></select></div>
+              <div>
+                <label class="text-xs font-extrabold text-slate-600">TEMPOH KPI (HARI BEKERJA)</label>
+                <div class="flex gap-2 mt-1">
+                  <input id="fKpi" type="number" min="0" max="365" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-extrabold">
+                  <span id="kpiLock" class="shrink-0 px-3 rounded-xl bg-slate-100 text-[11px] font-extrabold flex items-center">AUTO</span>
+                </div>
+                <p id="kpiHint" class="text-[11px] text-slate-500 font-semibold mt-1">KPI ditetapkan admin mengikut jenis.</p>
+              </div>
+              <div><label class="text-xs font-extrabold text-slate-600">TARIKH PERMOHONAN *</label><input id="fMohon" type="date" onchange="liveKira()" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"></div>
+              <div>
+                <label class="text-xs font-extrabold text-slate-600">TARIKH DILULUSKAN</label>
+                <input id="fLulus" type="date" onchange="liveKira()" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold">
+                <label class="flex items-center gap-2 mt-2 text-xs font-bold text-slate-600"><input id="chkSudahLulus" type="checkbox" checked onchange="toggleLulus()" class="w-4 h-4 accent-amber-600"> Telah diluluskan (nyah-tanda jika masih dalam proses)</label>
+              </div>
+              <div class="sm:col-span-2"><label class="text-xs font-extrabold text-slate-600">CATATAN</label><textarea id="fCatatan" rows="2" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium" placeholder="cth: Dokumen lengkap, perlu pengesahan SUK..."></textarea></div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 mt-6">
+              <button onclick="previewMacro()" class="px-5 py-3 rounded-xl border-2 border-navy-900 font-extrabold text-sm text-navy-900 hover:bg-navy-900 hover:text-white transition">Kira Tempoh (Preview)</button>
+              <button onclick="generatePermohonan()" class="flex-1 min-w-[220px] px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-sm shadow-card hover:opacity-95 flex items-center justify-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg> GENERATE &amp; SIMPAN KE RAW DATA
+              </button>
+              <button onclick="resetBorang()" class="px-5 py-3 rounded-xl bg-slate-100 font-extrabold text-sm hover:bg-slate-200">Set Semula</button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 space-y-4">
+            <div class="bg-navy-950 text-white rounded-3xl p-6 shadow-card batikk">
+              <div class="flex items-center justify-between">
+                <h4 class="font-extrabold">Enjin Macro — Kiraan Langsung</h4>
+                <button onclick="openMacro()" class="text-[11px] font-extrabold text-gold-300 hover:underline">FORMULA VBA</button>
+              </div>
+              <p class="text-xs text-white/60 font-medium mt-1">=NETWORKDAYS(TarikhMohon, TarikhLulus, CutiDikecualikan) — tolak hujung minggu &amp; tarikh admin</p>
+              <div class="grid grid-cols-2 gap-3 mt-4">
+                <div class="bg-white/10 rounded-2xl p-4 border border-white/10"><p class="text-[10px] font-bold tracking-widest text-white/60">HARI KALENDAR</p><p id="prevKalendar" class="text-2xl font-extrabold">—</p></div>
+                <div class="bg-white/10 rounded-2xl p-4 border border-white/10"><p class="text-[10px] font-bold tracking-widest text-white/60">HARI BEKERJA (KPI)</p><p id="prevBekerja" class="text-2xl font-extrabold text-gold-300">—</p></div>
+                <div class="bg-white/10 rounded-2xl p-3 border border-white/10 text-xs"><span class="text-white/60 font-bold">Tolak hujung minggu:</span> <b id="prevWeekend">—</b></div>
+                <div class="bg-white/10 rounded-2xl p-3 border border-white/10 text-xs"><span class="text-white/60 font-bold">Tolak cuti admin:</span> <b id="prevCuti">—</b></div>
+              </div>
+              <div id="prevCutiList" class="mt-3 text-[11px] mono text-gold-300/90 leading-relaxed"></div>
+              <div class="mt-4 rounded-2xl bg-white/[.07] border border-white/15 p-4 flex items-center justify-between">
+                <div><p class="text-[11px] font-bold text-white/60">SASARAN KPI</p><p id="prevKpi" class="font-extrabold">— hari</p></div>
+                <div class="text-right"><p class="text-[11px] font-bold text-white/60">STATUS</p><p id="prevStatus">—</p></div>
+              </div>
+              <p id="prevFormula" class="mono text-[11px] text-white/50 mt-3 break-all"></p>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-card p-6">
+              <h4 class="font-extrabold text-sm">Peraturan Kiraan KPI</h4><div class="divider-gold w-14 my-2"></div>
+              <ul class="text-[13px] text-slate-600 space-y-2 font-medium">
+                <li>• Tarikh permohonan &amp; tarikh lulus <b>dikira inklusif</b>.</li>
+                <li>• Sabtu / Ahad dikecualikan mengikut tetapan admin di <b>Tetapan &amp; Pelayan</b>.</li>
+                <li>• Tarikh yang ditanda admin di <b>Kalendar Cuti</b> tidak dikira.</li>
+                <li>• Permohonan belum diluluskan: status <b>Dalam Proses / Lewat Proses</b> berpandukan hari ini.</li>
+                <li>• Jenis KPI Fleksibel (ditambah admin): pengguna boleh pilih tempoh KPI sendiri.</li>
+              </ul>
+              <div id="pklbHistory" class="mt-3 text-xs"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RAW DATA -->
+      <section id="page-rawdata" class="page hidden space-y-4">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-card p-5 sm:p-6">
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <h3 class="section-title text-xl">Sheet Raw Data</h3>
+              <p class="text-xs text-slate-500 font-semibold">Ruang sheet di mana makro memasukkan tempoh hari yang dikira • <span id="rawCount" class="text-navy-900 font-extrabold">0 rekod</span></p>
+            </div>
+            <div class="ml-auto flex flex-wrap gap-2 no-print">
+              <button onclick="exportRawExcel()" class="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 flex items-center gap-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Eksport Excel
+              </button>
+              <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-navy-900 text-white text-xs font-extrabold">Cetak</button>
+              <button onclick="renderAll()" class="px-4 py-2.5 rounded-xl bg-slate-100 text-xs font-extrabold">Muat Semula</button>
+            </div>
+          </div>
+
+          <div class="flex gap-1 mt-5 no-print">
+            <div class="sheet-tab active" onclick="switchRawTab('data',this)">RAW_DATA</div>
+            <div class="sheet-tab" onclick="switchRawTab('ringkasan',this)">RINGKASAN</div>
+            <div class="sheet-tab" onclick="switchRawTab('cuti',this)">CUTI_DIKECUALIKAN</div>
+          </div>
+
+          <div id="rawTab-data" class="border border-navy-900 rounded-b-2xl rounded-tr-2xl overflow-hidden">
+            <div class="grid md:grid-cols-6 gap-2 p-4 bg-slate-50 border-b no-print">
+              <input id="rawSearch" oninput="rawPage=1;renderRaw()" placeholder="Cari rujukan / pemohon..." class="border-2 border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold">
+              <select id="rawJenis" onchange="rawPage=1;renderRaw()" class="border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-semibold"></select>
+              <select id="rawStatus" onchange="rawPage=1;renderRaw()" class="border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-semibold">
+                <option value="">Semua Status</option><option>Menepati KPI</option><option>Lewat</option><option>Dalam Proses</option><option>Lewat Proses</option>
+              </select>
+              <select id="rawPejabat" onchange="rawPage=1;renderRaw()" class="border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-semibold"></select>
+              <input id="rawDari" type="date" onchange="rawPage=1;renderRaw()" class="border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-semibold">
+              <input id="rawHingga" type="date" onchange="rawPage=1;renderRaw()" class="border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-semibold">
+            </div>
+            <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+              <table class="w-full excel-table">
+                <thead><tr>
+                  <th>Bil</th><th>No Rujukan</th><th>Jenis Permohonan</th><th>Pemohon</th><th>Pejabat</th>
+                  <th>Tarikh Mohon</th><th>Tarikh Lulus</th><th>Hari Bekerja</th><th>KPI</th><th>Status</th>
+                  <th class="no-print">Tindakan</th>
+                </tr></thead>
+                <tbody id="rawTableBody"></tbody>
+              </table>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-slate-50 text-xs font-bold text-slate-600 no-print">
+              <span id="rawPageInfo">Halaman 1</span>
+              <div class="flex gap-2">
+                <button onclick="changeRawPage(-1)" class="px-3 py-1.5 rounded-lg bg-white border font-extrabold">←</button>
+                <button onclick="changeRawPage(1)" class="px-3 py-1.5 rounded-lg bg-white border font-extrabold">→</button>
+                <select id="rawPerPage" onchange="rawPage=1;renderRaw()" class="border rounded-lg px-2 py-1">
+                  <option>10</option><option>20</option><option>50</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="rawTab-ringkasan" class="hidden border border-navy-900 rounded-b-2xl rounded-tr-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full excel-table">
+                <thead><tr><th>Kod</th><th>Jenis</th><th>KPI</th><th>Bil</th><th>Purata Hari</th><th>Menepati</th><th>Lewat</th><th>% Pematuhan</th></tr></thead>
+                <tbody id="rawRingkasanBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="rawTab-cuti" class="hidden border border-navy-900 rounded-b-2xl rounded-tr-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full excel-table">
+                <thead><tr><th>Tarikh</th><th>Nama Cuti / Sebab Dikecualikan</th><th>Hari</th><th>Kesan</th></tr></thead>
+                <tbody id="rawCutiBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LAPORAN -->
+      <section id="page-laporan" class="page hidden space-y-4">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-card p-5 sm:p-6">
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <h3 class="section-title text-xl">Laporan Keseluruhan &amp; Jana Excel</h3>
+              <p class="text-xs text-slate-500 font-semibold">Laporan detail setiap permohonan — tapis, jana, kemudian eksport dalam format Excel (.xlsx berbilang sheet)</p>
+            </div>
+            <div class="ml-auto flex flex-wrap gap-2 no-print">
+              <button onclick="generateReport()" class="px-5 py-2.5 rounded-xl bg-navy-900 text-white text-xs font-extrabold">JANA LAPORAN</button>
+              <button onclick="exportLaporanExcel()" class="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">EKSPORT EXCEL</button>
+              <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-slate-100 text-xs font-extrabold">CETAK PDF</button>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-5 gap-2 mt-4 no-print">
+            <div><label class="text-[11px] font-extrabold text-slate-500">DARI</label><input id="lapDari" type="date" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-xs font-bold"></div>
+            <div><label class="text-[11px] font-extrabold text-slate-500">HINGGA</label><input id="lapHingga" type="date" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-xs font-bold"></div>
+            <div><label class="text-[11px] font-extrabold text-slate-500">JENIS</label><select id="lapJenis" class="w-full border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-bold"></select></div>
+            <div><label class="text-[11px] font-extrabold text-slate-500">STATUS</label><select id="lapStatus" class="w-full border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-bold"><option value="">Semua</option><option>Menepati KPI</option><option>Lewat</option><option>Dalam Proses</option><option>Lewat Proses</option></select></div>
+            <div><label class="text-[11px] font-extrabold text-slate-500">PEJABAT</label><select id="lapPejabat" class="w-full border-2 border-slate-200 rounded-xl px-2 py-2 text-xs font-bold"></select></div>
+          </div>
+        </div>
+
+        <div id="lapEmpty" class="bg-amber-50 border-2 border-dashed border-gold-500/60 rounded-3xl p-10 text-center">
+          <p class="font-extrabold">Belum ada laporan dijana</p>
+          <p class="text-sm text-slate-500">Tetapkan tapisan di atas dan tekan <b>JANA LAPORAN</b> untuk hasilkan laporan detail setiap permohonan.</p>
+        </div>
+
+        <div id="lapResult" class="hidden space-y-4">
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3" id="lapSummaryCards"></div>
+
+          <div class="grid lg:grid-cols-3 gap-4">
+            <div class="bg-white rounded-2xl border shadow-card p-5 lg:col-span-2">
+              <h4 class="font-extrabold text-sm">Prestasi Pematuhan Ikut Jenis (Laporan Semasa)</h4>
+              <div class="h-[240px] mt-2"><canvas id="chartLap"></canvas></div>
+            </div>
+            <div class="bg-navy-950 text-white rounded-2xl p-5 text-sm">
+              <h4 class="font-extrabold text-gold-300">Ringkasan Eksekutif</h4>
+              <div id="lapMeta" class="mt-2 space-y-1.5 text-white/80 font-medium text-[13px]"></div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border shadow-card overflow-hidden print-full">
+            <div class="p-4 font-extrabold text-sm">Prestasi Ikut Jenis Permohonan</div>
+            <div class="overflow-x-auto">
+              <table class="w-full excel-table">
+                <thead><tr><th>Jenis</th><th>KPI</th><th>Bil</th><th>Purata</th><th>Min–Max</th><th>Tepati</th><th>Lewat</th><th>%</th></tr></thead>
+                <tbody id="lapJenisTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border shadow-card overflow-hidden print-full">
+            <div class="p-4 font-extrabold text-sm">Senarai Detail Setiap Permohonan <span id="lapDetailCount" class="text-slate-500 font-semibold"></span></div>
+            <div class="overflow-x-auto max-h-[560px] overflow-y-auto">
+              <table class="w-full excel-table">
+                <thead><tr><th>Bil</th><th>Rujukan</th><th>Jenis</th><th>Pemohon</th><th>Mohon</th><th>Lulus</th><th>Kalendar</th><th>Bekerja</th><th>KPI</th><th>Varians</th><th>Status</th><th>Pegawai</th></tr></thead>
+                <tbody id="lapDetailBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CUTI -->
+      <section id="page-cuti" class="page hidden space-y-4">
+        <div class="grid lg:grid-cols-5 gap-4">
+          <div class="lg:col-span-3 bg-white rounded-3xl border shadow-card p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="section-title text-xl">Kalendar Tarikh Dikecualikan</h3>
+                <p class="text-xs text-slate-500 font-semibold">Admin klik tarikh untuk tanda / nyah-tanda sebagai <b>tidak perlu dikira</b> oleh makro. <span id="cutiCount">0 tarikh</span></p>
+              </div>
+              <span class="chip">ADMIN</span>
+            </div>
+
+            <div class="flex items-center justify-between mt-4 bg-navy-950 text-white rounded-2xl p-3">
+              <button onclick="moveCal(-1)" class="w-9 h-9 rounded-xl bg-white/10 font-extrabold">‹</button>
+              <p id="calTitle" class="font-extrabold">—</p>
+              <div class="flex gap-2">
+                <button onclick="goTodayCal()" class="px-3 py-1.5 rounded-lg bg-gold-500 text-navy-950 text-xs font-extrabold">Hari Ini</button>
+                <button onclick="moveCal(1)" class="w-9 h-9 rounded-xl bg-white/10 font-extrabold">›</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1.5 mt-3 text-center text-[10px] font-extrabold text-slate-500">
+              <span>ISN</span><span>SEL</span><span>RAB</span><span>KHA</span><span>JUM</span><span class="text-red-500">SAB</span><span class="text-red-500">AHD</span>
+            </div>
+            <div id="calGrid" class="grid grid-cols-7 gap-1.5 mt-1.5"></div>
+
+            <div class="flex flex-wrap gap-4 mt-4 text-xs font-bold">
+              <span><i class="dot bg-red-600"></i>Cuti / Dikecualikan</span>
+              <span><i class="dot bg-slate-300"></i>Hujung minggu (dikecualikan)</span>
+              <span><i class="dot bg-white border border-slate-400"></i>Hari bekerja (dikira)</span>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-3 mt-4 bg-slate-50 rounded-2xl p-4 border">
+              <label class="flex items-center gap-2 text-sm font-bold"><input id="chkSat" type="checkbox" onchange="saveSettingsFromCuti()" class="w-4 h-4 accent-red-600"> Kecualikan Sabtu</label>
+              <label class="flex items-center gap-2 text-sm font-bold"><input id="chkSun" type="checkbox" onchange="saveSettingsFromCuti()" class="w-4 h-4 accent-red-600"> Kecualikan Ahad</label>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 space-y-4">
+            <div class="bg-white rounded-3xl border shadow-card p-6">
+              <h4 class="font-extrabold">Tambah Tarikh Dikecualikan</h4><div class="divider-gold w-14 my-2"></div>
+              <label class="text-xs font-extrabold text-slate-600">TARIKH</label>
+              <input id="cutiDate" type="date" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold">
+              <label class="text-xs font-extrabold text-slate-600 mt-3 block">NAMA / SEBAB</label>
+              <input id="cutiName" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold" placeholder="cth: Hari Gawai Dayak">
+              <button onclick="addCuti()" class="mt-3 w-full py-2.5 rounded-xl bg-red-600 text-white font-extrabold text-sm">TANDA TARIKH DIKECUALIKAN</button>
+              <div class="grid grid-cols-2 gap-2 mt-2">
+                <button onclick="importCutiSarawak()" class="py-2 rounded-xl bg-navy-900 text-white text-xs font-extrabold">Import Cuti Sarawak 2026</button>
+                <button onclick="clearCuti()" class="py-2 rounded-xl bg-slate-100 text-xs font-extrabold">Padam Semua</button>
+              </div>
+            </div>
+            <div class="bg-white rounded-3xl border shadow-card p-6">
+              <h4 class="font-extrabold">Senarai Tarikh Dikecualikan</h4>
+              <div id="cutiList" class="mt-3 space-y-2 max-h-[380px] overflow-y-auto"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- JENIS -->
+      <section id="page-jenis" class="page hidden space-y-4">
+        <div class="bg-white rounded-3xl border shadow-card p-5 sm:p-6">
+          <div class="flex flex-wrap gap-3 items-center">
+            <div>
+              <h3 class="section-title text-xl">Jenis Permohonan &amp; Tempoh KPI</h3>
+              <p class="text-xs text-slate-500 font-semibold"><span id="jenisCount">25 jenis aktif</span> • Admin boleh menambah jenis &amp; menetapkan KPI hari</p>
+            </div>
+            <button onclick="openJenisModal()" class="ml-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold text-sm">+ Tambah Jenis</button>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-2 mt-4">
+            <input id="jenisSearchAdmin" oninput="renderJenisAdmin()" placeholder="Cari jenis..." class="border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold">
+            <select id="jenisCatFilter" onchange="renderJenisAdmin()" class="border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"><option value="">Semua Kategori</option></select>
+          </div>
+        </div>
+        <div id="jenisGrid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- PENGGUNA -->
+      <section id="page-pengguna" class="page hidden space-y-4">
+        <div class="bg-white rounded-3xl border shadow-card p-5 sm:p-6">
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <h3 class="section-title text-xl">Pengurusan Pengguna</h3>
+              <p class="text-xs text-slate-500 font-semibold">Admin → Pengguna → <b>Kemaskini Pengguna</b>: ubah nama, ID, pejabat, peranan, kata laluan atau jenis permohonan. Perubahan berkuat kuasa di semua peranti.</p>
+            </div>
+            <button onclick="openUserModal()" class="ml-auto px-5 py-2.5 rounded-xl bg-navy-900 text-white font-extrabold text-sm">+ Tambah Pengguna</button>
+          </div>
+          <input id="userSearch" oninput="renderPengguna()" placeholder="Cari nama / ID / pejabat..." class="mt-4 w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold">
+          <p class="text-xs font-bold text-slate-500 mt-2"><span id="userCount">0</span> akaun didaftar</p>
+        </div>
+        <div class="bg-white rounded-3xl border shadow-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full excel-table">
+              <thead><tr><th>Pengguna</th><th>ID</th><th>Pejabat</th><th>Peranan</th><th>Jenis Dikendalikan</th><th>Log Masuk Terakhir</th><th>Tindakan</th></tr></thead>
+              <tbody id="penggunaTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TETAPAN -->
+      <section id="page-tetapan" class="page hidden space-y-4">
+        <div class="grid lg:grid-cols-2 gap-4">
+          <div class="bg-white rounded-3xl border shadow-card p-6 sm:p-8">
+            <h3 class="section-title text-xl">Tetapan Sistem &amp; Macro</h3>
+            <p class="text-sm text-slate-500">Kawal peraturan kiraan hari bekerja makro.</p>
+            <div class="divider-gold my-4"></div>
+            <label class="text-xs font-extrabold text-slate-600">NAMA PEJABAT UTAMA</label>
+            <input id="setOffice" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold">
+            <div class="grid sm:grid-cols-2 gap-3 mt-4">
+              <label class="flex items-center gap-2 text-sm font-bold bg-slate-50 border rounded-xl p-3"><input id="setSat" type="checkbox" class="w-4 h-4 accent-red-600"> Kecualikan Sabtu dari kiraan</label>
+              <label class="flex items-center gap-2 text-sm font-bold bg-slate-50 border rounded-xl p-3"><input id="setSun" type="checkbox" class="w-4 h-4 accent-red-600"> Kecualikan Ahad dari kiraan</label>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-5">
+              <button onclick="saveSettings()" class="px-5 py-2.5 rounded-xl bg-navy-900 text-white text-sm font-extrabold">Simpan Tetapan</button>
+              <button onclick="resetDemo()" class="px-5 py-2.5 rounded-xl bg-amber-100 text-amber-900 text-sm font-extrabold">Set Semula Data Demo</button>
+              <button onclick="clearApps()" class="px-5 py-2.5 rounded-xl bg-red-50 text-red-700 text-sm font-extrabold">Padam Semua Permohonan</button>
+            </div>
+            <div class="mt-6 rounded-2xl bg-slate-50 border p-4 text-xs font-mono text-slate-600">=NETWORKDAYS(TarikhMohon, TarikhLulus, CutiDikecualikan) + peraturan hujung minggu di atas</div>
+          </div>
+
+          <div class="bg-white rounded-3xl border shadow-card p-6 sm:p-8">
+            <h3 class="section-title text-xl">Pelayan Tempatan &amp; Penyegerakan</h3>
+            <p class="text-sm text-slate-500">Semua data &amp; maklumat pengguna disimpan pada PC pelayan (localhost) dan disegerak ke PC pengguna.</p>
+            <div class="divider-gold my-4"></div>
+
+            <div class="rounded-2xl bg-navy-950 text-white p-5">
+              <div class="flex items-center gap-3">
+                <span class="pulse-dot"></span>
+                <div>
+                  <p class="text-[11px] font-extrabold tracking-widest text-gold-300">STATUS PELAYAN</p>
+                  <p id="syncStatus" class="font-extrabold text-sm">Aktif • http://localhost:3000</p>
+                </div>
+              </div>
+              <div id="syncInfo" class="mt-3 text-[12px] text-white/70 font-medium space-y-1"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <button onclick="syncNow()" class="py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold">Segerak Sekarang</button>
+              <button onclick="backupServer()" class="py-2.5 rounded-xl bg-navy-900 text-white text-xs font-extrabold">Muat Turun Sandaran</button>
+              <label class="py-2.5 rounded-xl bg-slate-100 text-xs font-extrabold text-center cursor-pointer">Pulih dari Fail<input type="file" accept=".json" class="hidden" onchange="restoreServer(event)"></label>
+              <button onclick="renderSyncLog()" class="py-2.5 rounded-xl bg-slate-100 text-xs font-extrabold">Muat Semula Log</button>
+            </div>
+
+            <div class="mt-5">
+              <p class="text-xs font-extrabold text-slate-500 tracking-wider">LOG PENYEGERAKAN</p>
+              <div id="syncLog" class="mt-2 max-h-[220px] overflow-y-auto rounded-2xl bg-slate-50 border p-3 text-[11px] mono text-slate-600 space-y-1"></div>
+            </div>
+
+            <div class="mt-5 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-[12px] text-amber-900 font-medium leading-relaxed">
+              <b>Cara guna pada rangkaian pejabat:</b> Letakkan fail <span class="mono">spk.html</span> pada PC pelayan (cth. <span class="mono">C:\SPK\spk.html</span>) dan kongsi folder tersebut. Buka pada PC pengguna melalui alamat <span class="mono">http://localhost:3000/spk.html</span> atau <span class="mono">http://&lt;IP-PELAYAN&gt;/spk.html</span>. Data disimpan dalam pelayar PC dan boleh disandarkan/dipulihkan supaya semua PC pengguna mempunyai rekod yang sama.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANDUAN -->
+      <section id="page-panduan" class="page hidden space-y-4">
+        <div class="bg-white rounded-3xl border shadow-card p-6 sm:p-8">
+          <h3 class="section-title text-xl">Panduan Macro &amp; Aliran Kerja</h3>
+          <div class="divider-gold my-3 w-24"></div>
+          <div class="grid md:grid-cols-4 gap-3 text-sm">
+            <div class="rounded-2xl bg-navy-950 text-white p-5">
+              <p class="text-gold-300 font-extrabold text-xs tracking-widest">LANGKAH 1</p>
+              <p class="font-extrabold mt-1">Pengguna isi borang</p>
+              <p class="text-white/65 text-[13px] mt-1">Pilih 1 daripada 25 jenis, isi tarikh mohon &amp; tarikh lulus. Untuk jenis KPI fleksibel, pilih sendiri tempoh KPI.</p>
+            </div>
+            <div class="rounded-2xl bg-navy-950 text-white p-5">
+              <p class="text-gold-300 font-extrabold text-xs tracking-widest">LANGKAH 2</p>
+              <p class="font-extrabold mt-1">Tekan Generate</p>
+              <p class="text-white/65 text-[13px] mt-1">Macro NETWORKDAYS mengira hari bekerja, tolak Sabtu/Ahad &amp; tarikh yang ditanda admin.</p>
+            </div>
+            <div class="rounded-2xl bg-navy-950 text-white p-5">
+              <p class="text-gold-300 font-extrabold text-xs tracking-widest">LANGKAH 3</p>
+              <p class="font-extrabold mt-1">Masuk Raw Data</p>
+              <p class="text-white/65 text-[13px] mt-1">Tempoh dimasukkan ke ruang sheet Raw Data beserta status Menepati / Lewat / Dalam Proses.</p>
+            </div>
+            <div class="rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 text-navy-950 p-5">
+              <p class="font-extrabold text-xs tracking-widest">LANGKAH 4</p>
+              <p class="font-extrabold mt-1">Admin jana Excel</p>
+              <p class="text-[13px] mt-1 font-semibold">Admin → Laporan → Jana → Eksport Excel (5 sheet: Ringkasan, Detail, Ikut Jenis, Cuti, Info).</p>
+            </div>
+          </div>
+
+          <div class="mt-6 grid lg:grid-cols-2 gap-4">
+            <div class="rounded-2xl border p-5">
+              <h4 class="font-extrabold text-sm">Formula Macro (Excel VBA) yang diguna pakai</h4>
+              <button onclick="openMacro()" class="mt-2 px-4 py-2 rounded-xl bg-navy-900 text-white text-xs font-extrabold">Lihat &amp; Salin Kod VBA</button>
+              <p class="text-xs text-slate-500 mt-2">Kod ini sepadan 100% dengan enjin JavaScript dalam sistem ini.</p>
+            </div>
+            <div class="rounded-2xl border p-5 text-[13px] font-medium text-slate-600 space-y-1.5">
+              <h4 class="font-extrabold text-sm text-navy-900">Soalan Lazim</h4>
+              <p><b>Q: Tarikh lulus sebelum tarikh mohon?</b><br>A: Sistem akan sekat — tarikh lulus mesti sama atau selepas tarikh mohon.</p>
+              <p><b>Q: Permohonan belum lulus?</b><br>A: Nyah-tanda “Telah diluluskan”. Status dikira sebagai Dalam Proses / Lewat Proses berpandukan hari ini.</p>
+              <p><b>Q: Ubah kata laluan pengguna?</b><br>A: Admin → Pengguna → Kemaskini Pengguna → isi Kata Laluan Baharu → Simpan.</p>
+              <p><b>Q: Bagaimana data sampai ke PC pengguna?</b><br>A: Data disimpan pada PC pelayan tempatan; gunakan Segerak / Sandaran di halaman Tetapan untuk memindahkan rekod.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="px-8 pb-8 text-center text-[11px] font-semibold text-slate-400">
+      SPK Sarawak • Sistem Pengurusan KPI Permohonan • Pejabat Daerah • Data disimpan pada pelayan tempatan • Sedia import Excel
+    </footer>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="modalMacro" class="hidden fixed inset-0 z-[90] modal-bg flex items-center justify-center p-4">
+  <div class="modal-card bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between">
+      <h3 class="font-extrabold text-lg">Formula Macro — Kira Tempoh Hari</h3>
+      <button onclick="closeModal('modalMacro')" class="w-9 h-9 rounded-xl bg-slate-100 font-extrabold">✕</button>
+    </div>
+    <p class="text-sm text-slate-500">Macro mengira dari <b>Tarikh Permohonan</b> hingga <b>Tarikh Diluluskan</b> (inklusif), menolak hujung minggu &amp; tarikh dikecualikan admin, lalu dimasukkan ke ruang Sheet Raw Data.</p>
+    <div class="mt-3 rounded-2xl bg-navy-950 p-4 overflow-x-auto">
+      <pre id="vbaCode" class="mono text-[12px] text-emerald-300 leading-relaxed"></pre>
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="copyVBA()" class="flex-1 py-3 rounded-xl bg-gold-500 font-extrabold text-sm text-navy-950">Salin Kod VBA</button>
+      <button onclick="closeModal('modalMacro')" class="px-5 py-3 rounded-xl bg-slate-100 font-extrabold text-sm">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalView" class="hidden fixed inset-0 z-[90] modal-bg flex items-center justify-center p-4">
+  <div class="modal-card bg-white rounded-3xl max-w-xl w-full p-6 max-h-[90vh] overflow-y-auto" id="viewContent"></div>
+</div>
+
+<div id="modalJenis" class="hidden fixed inset-0 z-[90] modal-bg flex items-center justify-center p-4">
+  <div class="modal-card bg-white rounded-3xl max-w-lg w-full p-6">
+    <h3 id="jenisModalTitle" class="font-extrabold text-lg">Tambah Jenis Permohonan</h3>
+    <div class="space-y-3 mt-4">
+      <div><label class="text-xs font-extrabold text-slate-500">NAMA JENIS *</label><textarea id="jName" rows="2" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"></textarea></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs font-extrabold text-slate-500">KATEGORI</label><input id="jCat" list="catList" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"><datalist id="catList"></datalist></div>
+        <div><label class="text-xs font-extrabold text-slate-500">KPI (HARI)</label><input id="jKpi" type="number" min="0" max="365" value="7" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-extrabold"></div>
+      </div>
+      <label class="flex items-start gap-2 text-sm font-semibold bg-amber-50 border border-amber-200 rounded-xl p-3"><input id="jCustom" type="checkbox" class="mt-1 w-4 h-4 accent-amber-600"><span><b>KPI Fleksibel</b> — pengguna pilih tempoh KPI semasa isi borang &amp; auto-muat nilai terakhir.</span></label>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="saveJenis()" class="flex-1 py-3 rounded-xl bg-navy-900 text-white font-extrabold text-sm">Simpan</button>
+      <button onclick="closeModal('modalJenis')" class="px-5 py-3 rounded-xl bg-slate-100 font-extrabold text-sm">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalUser" class="hidden fixed inset-0 z-[90] modal-bg flex items-center justify-center p-4">
+  <div class="modal-card bg-white rounded-3xl max-w-2xl w-full p-6 max-h-[92vh] overflow-y-auto">
+    <h3 id="userModalTitle" class="font-extrabold text-lg">Kemaskini Pengguna</h3>
+    <p class="text-xs text-slate-500 font-semibold">Ubah nama, ID, pejabat, peranan, kata laluan atau jenis permohonan. Berkuat kuasa di semua peranti.</p>
+    <div class="grid sm:grid-cols-2 gap-3 mt-4">
+      <div><label class="text-xs font-extrabold text-slate-500">NAMA PENUH *</label><input id="uName" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"></div>
+      <div><label class="text-xs font-extrabold text-slate-500">ID PENGGUNA *</label><input id="uId" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold mono"></div>
+      <div><label class="text-xs font-extrabold text-slate-500">PEJABAT</label><select id="uOffice" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"></select></div>
+      <div><label class="text-xs font-extrabold text-slate-500">PERANAN</label><select id="uRole" class="mt-1 w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold"><option value="user">Pengguna (Pegawai)</option><option value="admin">Admin</option></select></div>
+      <div class="sm:col-span-2">
+        <label class="text-xs font-extrabold text-slate-500">KATA LALUAN BAHARU (kosongkan jika tidak diubah)</label>
+        <div class="flex gap-2 mt-1">
+          <input id="uPass" type="text" placeholder="cth: sarawak2026" class="flex-1 border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold mono">
+          <button onclick="document.getElementById('uPass').value=genPass()" class="px-4 rounded-xl bg-slate-100 text-xs font-extrabold">Jana</button>
+        </div>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="text-xs font-extrabold text-slate-500">JENIS PERMOHONAN DIKENDALIKAN</label>
+        <div class="flex gap-2 mt-1 mb-2">
+          <button onclick="checkAllJenis(true)" class="px-3 py-1.5 rounded-lg bg-navy-900 text-white text-[11px] font-extrabold">Pilih Semua</button>
+          <button onclick="checkAllJenis(false)" class="px-3 py-1.5 rounded-lg bg-slate-100 text-[11px] font-extrabold">Nyah Semua</button>
+        </div>
+        <div id="uJenisList" class="max-h-[180px] overflow-y-auto border-2 border-slate-200 rounded-xl p-3 space-y-1.5 text-[13px] font-semibold"></div>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="saveUser()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold text-sm">Simpan Kemaskini</button>
+      <button onclick="closeModal('modalUser')" class="px-5 py-3 rounded-xl bg-slate-100 font-extrabold text-sm">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalConfirm" class="hidden fixed inset-0 z-[95] modal-bg flex items-center justify-center p-4">
+  <div class="modal-card bg-white rounded-3xl max-w-sm w-full p-6 text-center">
+    <h3 id="confirmTitle" class="font-extrabold">Padam?</h3>
+    <p id="confirmMsg" class="text-sm text-slate-500 mt-1"></p>
+    <div class="grid grid-cols-2 gap-2 mt-5">
+      <button onclick="closeModal('modalConfirm')" class="py-2.5 rounded-xl bg-slate-100 font-extrabold text-sm">Batal</button>
+      <button id="btnConfirmYes" class="py-2.5 rounded-xl bg-red-600 text-white font-extrabold text-sm">Ya, Teruskan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   UTIL
+================================================================ */
+const $ = id => document.getElementById(id);
+const OFFICES = ["Pejabat Daerah Kuching","Pejabat Daerah Samarahan","Pejabat Daerah Serian","Pejabat Daerah Sri Aman","Pejabat Daerah Sibu","Pejabat Daerah Miri","Pejabat Daerah Limbang"];
+const CATS = ["Pusaka, Probet & Wasiat","Anak Angkat","Senapang Patah & Peluru","Perniagaan & Perdagangan","Mahkamah & Pentadbiran","PKLB & Perkhidmatan Awam"];
+
+function load(k,f){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):f }catch(e){ return f } }
+function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)) }catch(e){ toast("Ruang simpanan pelayar penuh.","err") } }
+function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;") }
+function fmtD(s){ if(!s) return "—"; const d=new Date(s+"T00:00:00"); return d.toLocaleDateString("ms-MY",{day:"2-digit",month:"short",year:"numeric"}) }
+function fmtDs(s){ if(!s) return "—"; const p=s.split("-"); return p[2]+"/"+p[1]+"/"+p[0] }
+function isoDate(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0") }
+function todayStr(){ return isoDate(new Date()) }
+function genPass(){ return "swk"+Math.floor(1000+Math.random()*9000) }
+
+function toast(msg,type){
+  const c = { ok:["bg-emerald-600","✓"], err:["bg-red-600","!"], info:["bg-navy-900","i"] }[type||"ok"];
+  const el = document.createElement("div");
+  el.className = "toast "+c[0]+" text-white rounded-2xl p-4 shadow-pop text-[13px] font-bold flex gap-3 items-start";
+  el.innerHTML = '<span class="w-6 h-6 shrink-0 rounded-full bg-white/25 flex items-center justify-center text-xs font-extrabold">'+c[1]+'</span><span>'+msg+'</span>';
+  $("toastRoot").appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transition=".4s"; setTimeout(()=>el.remove(),400) },3600);
+}
+function openModal(id){ $(id).classList.remove("hidden") }
+function closeModal(id){ $(id).classList.add("hidden") }
+function togglePass(id){ const i=$(id); i.type = i.type==="password" ? "text" : "password" }
+let confirmCb=null;
+function askConfirm(t,m,cb){ $("confirmTitle").textContent=t; $("confirmMsg").textContent=m; confirmCb=cb; openModal("modalConfirm") }
+$("btnConfirmYes").onclick = ()=>{ closeModal("modalConfirm"); if(confirmCb) confirmCb() };
+
+/* ================================================================
+   DATA DEFAULT
+================================================================ */
+const DEFAULT_JENIS = [
+  {code:"01",cat:CATS[0],name:"Permohonan baharu Surat Kuasa Mentadbir (Letters of Administration)",kpi:14,custom:false},
+  {code:"02",cat:CATS[0],name:"Permohonan baharu Probet (Probate of Will)",kpi:14,custom:false},
+  {code:"03",cat:CATS[0],name:"Permohonan penggantian Surat Kuasa Mentadbir (Letters of Administration)/Probet (Probate of Will)",kpi:14,custom:false},
+  {code:"04",cat:CATS[0],name:"Permohonan pembatalan Surat Kuasa Mentadbir (Letters of Administration)/Probet (Probate of Will)",kpi:21,custom:false},
+  {code:"05",cat:CATS[1],name:"Permohonan baharu Sijil Anak Angkat",kpi:14,custom:false},
+  {code:"06",cat:CATS[1],name:"Permohonan penggantian Sijil Anak Angkat",kpi:7,custom:false},
+  {code:"07",cat:CATS[2],name:"Permohonan Pindah Milik Senapang Patah dikeluarkan lesen",kpi:30,custom:false},
+  {code:"08",cat:CATS[2],name:"Permohonan berkaitan senapang patah yang memerlukan pertimbangan Setiausaha Kerajaan Sarawak dimaklumkan kepada pemohon",kpi:14,custom:false},
+  {code:"09",cat:CATS[2],name:"Permohonan Pindah Tempat Daftar Senapang Patah",kpi:14,custom:false},
+  {code:"10",cat:CATS[2],name:"Permohonan penggantian Lesen Senapang Patah",kpi:7,custom:false},
+  {code:"11",cat:CATS[2],name:"Permohonan pembaharuan Lesen Senapang Patah",kpi:3,custom:false},
+  {code:"12",cat:CATS[2],name:"Pengeluaran Lesen Membeli Peluru",kpi:1,custom:false},
+  {code:"13",cat:CATS[3],name:"Permohonan baharu Sijil Pendaftaran Nama-Nama Perniagaan (BNR Certificate)",kpi:3,custom:false},
+  {code:"14",cat:CATS[3],name:"Pembatalan Sijil Pendaftaran Nama-Nama Perniagaan (Revocation of BNR Certificate)",kpi:7,custom:false},
+  {code:"15",cat:CATS[3],name:"Pindaan Sijil Pendaftaran Nama-Nama Perniagaan (Amendment of BNR Certificate)",kpi:7,custom:false},
+  {code:"16",cat:CATS[3],name:"Permohonan penggantian Sijil Pendaftaran Nama-Nama Perniagaan (BNR Certificate)",kpi:7,custom:false},
+  {code:"17",cat:CATS[3],name:"Permohonan baharu Lesen Perdagangan (Trade Licence)",kpi:7,custom:false},
+  {code:"18",cat:CATS[3],name:"Permohonan pembaharuan Lesen Perdagangan (Trade Licence)",kpi:3,custom:false},
+  {code:"19",cat:CATS[3],name:"Permohonan penggantian Lesen Perdagangan (Trade Licence)",kpi:7,custom:false},
+  {code:"20",cat:CATS[4],name:"Pendaftaran kes-kes Mahkamah Bumiputera Sarawak",kpi:3,custom:false},
+  {code:"21",cat:CATS[4],name:"Pendengaran dan keputusan permohonan reman",kpi:1,custom:false},
+  {code:"22",cat:CATS[4],name:"Sijil perlantikan/pembaharuan/surat penamatan perkhidmatan Ketua Masyarakat dan Ketua Kaum",kpi:30,custom:false},
+  {code:"23",cat:CATS[4],name:"Sijil perlantikan/pembaharuan/surat penamatan perkhidmatan Jawatankuasa Kemajuan dan Keselamatan Kampung (JKKK)",kpi:30,custom:false},
+  {code:"24",cat:CATS[4],name:"Pengesahan Akuan Berkanun/Surat Sumpah",kpi:1,custom:false},
+  {code:"25",cat:CATS[5],name:"Projek Kecil Luar Bandar (PKLB) — Keputusan Lembaga Perolehan Bahagian Sarawak dimaklumkan kepada pembekal melalui surat tawaran kerja atau bekalan/perkhidmatan",kpi:14,custom:false}
+];
+
+const DEFAULT_CUTI = [
+  {date:"2026-01-01",name:"Tahun Baharu"},
+  {date:"2026-01-27",name:"Israk & Mikraj"},
+  {date:"2026-02-17",name:"Tahun Baharu Cina (Hari 1)"},
+  {date:"2026-02-18",name:"Tahun Baharu Cina (Hari 2)"},
+  {date:"2026-03-20",name:"Hari Raya Aidilfitri (Jangkaan)"},
+  {date:"2026-03-21",name:"Hari Raya Aidilfitri Kedua"},
+  {date:"2026-05-01",name:"Hari Pekerja"},
+  {date:"2026-05-27",name:"Hari Wesak"},
+  {date:"2026-06-01",name:"Hari Gawai Dayak (Hari 1)"},
+  {date:"2026-06-02",name:"Hari Gawai Dayak (Hari 2)"},
+  {date:"2026-06-08",name:"Hari Keputeraan Agong"},
+  {date:"2026-08-31",name:"Hari Kebangsaan"},
+  {date:"2026-09-16",name:"Hari Malaysia"},
+  {date:"2026-12-25",name:"Hari Krismas"}
+];
+
+let DB = {
+  users: load("spk_users",null),
+  apps: load("spk_apps",null),
+  jenis: load("spk_jenis",null),
+  cuti: load("spk_cuti",null),
+  settings: load("spk_set",null),
+  session: load("spk_sess",null),
+  log: load("spk_log",null)
+};
+
+function seedServer(){
+  if(!DB.users){
+    DB.users = [
+      {name:"Pentadbir Sistem",uid:"ADMIN001",office:OFFICES[0],role:"admin",password:"admin123",assigned:["all"],lastLogin:"—",created:"2026-01-02"},
+      {name:"Ahmad Bin Ali",uid:"USER001",office:OFFICES[1],role:"user",password:"user123",assigned:["all"],lastLogin:"—",created:"2026-01-05"},
+      {name:"Siti Mariam Binti Rosli",uid:"USER002",office:OFFICES[2],role:"user",password:"user123",assigned:["13","14","15","16","17","18","19"],lastLogin:"—",created:"2026-02-01"}
+    ];
+    save("spk_users",DB.users);
+  }
+  if(!DB.jenis){ DB.jenis = DEFAULT_JENIS.map(j=>({...j,active:true})); save("spk_jenis",DB.jenis) }
+  if(!DB.cuti){ DB.cuti = DEFAULT_CUTI.slice(); save("spk_cuti",DB.cuti) }
+  if(!DB.settings){ DB.settings = {excludeSat:true,excludeSun:true,office:OFFICES[0],serverUrl:"http://localhost:3000",lastSync:null}; save("spk_set",DB.settings) }
+  if(!DB.log){ DB.log = [{t:new Date().toISOString(),m:"Pelayan tempatan dimulakan (localhost:3000)"}]; save("spk_log",DB.log) }
+  if(!DB.apps){ DB.apps = genSample(); save("spk_apps",DB.apps) }
+  if(!DB.settings.lastSync){ DB.settings.lastSync = new Date().toISOString(); save("spk_set",DB.settings) }
+}
+
+let _seed = 20260101;
+function rndf(){ _seed = (_seed*9301+49297)%233280; return _seed/233280 }
+function rndi(a,b){ return Math.floor(rndf()*(b-a+1))+a }
+
+function genSample(){
+  const names = ["Dayang Nurul Binti Ahmad","Joseph Anak Luta","Ahmad Zaidi Bin Bujang","Mary Anak Jati","Wong Mee Ling","Abang Zulkarnain Bin Abang Yusof","Rosnah Binti Ali","Peter Ranggi Anak Sumping","Nurul Aina Binti Karim","Tiong Hock Siong","Sulaiman Bin Budin","Catherine Tam Ai Ling","Mohd Faizal Bin Hassan","Ling Mei Chen","Jimbun Anak Ugos","Hamidah Binti Salleh","Rajesh A/L Kumar","Francis Ngu Hock Ping","Kumaran A/L Selvam","Bibi Zaleha Binti Osman"];
+  const codes = ["01","02","05","07","11","12","13","17","18","20","21","24","25","03","15","22","06","09","19","23"];
+  const arr=[]; let n=1042;
+  for(let i=0;i<28;i++){
+    const code = codes[rndi(0,codes.length-1)];
+    const j = DEFAULT_JENIS.find(x=>x.code===code);
+    const m = rndi(1,9), d = rndi(1,28);
+    const mohon = "2026-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    let lulus = null;
+    if(rndf() > 0.20){
+      const dm = new Date(mohon+"T00:00:00");
+      dm.setDate(dm.getDate()+rndi(0, j.kpi+9));
+      const iso = isoDate(dm);
+      if(iso <= "2026-12-20" && iso >= mohon) lulus = iso;
+    }
+    arr.push({
+      id:"SPK-2026-"+(n++),
+      jenisCode:code,
+      pemohon:names[rndi(0,names.length-1)],
+      kp:rndi(70,99)+rndi(10,12)+rndi(10,31)+"-13-"+rndi(1000,9999),
+      tel:"01"+rndi(1,9)+"-"+rndi(1000000,9999999),
+      pejabat:OFFICES[rndi(0,4)],
+      pegawaiId: i%3===0 ? "USER002" : "USER001",
+      pegawaiName: i%3===0 ? "Siti Mariam Binti Rosli" : "Ahmad Bin Ali",
+      tarikhMohon:mohon,
+      tarikhLulus:lulus,
+      kpi:j.kpi,
+      catatan: i%5===0 ? "Dokumen lengkap." : "",
+      created: mohon+"T08:30:00.000Z"
+    });
+  }
+  return arr.sort((a,b)=>a.tarikhMohon.localeCompare(b.tarikhMohon));
+}
+
+seedServer();
+
+/* ================================================================
+   PELAYAN TEMPATAN (SIMULASI) + PENYEGERAKAN
+================================================================ */
+function persist(){
+  save("spk_users",DB.users); save("spk_apps",DB.apps); save("spk_jenis",DB.jenis);
+  save("spk_cuti",DB.cuti); save("spk_set",DB.settings); save("spk_log",DB.log);
+  DB.settings.lastSync = new Date().toISOString();
+  save("spk_set",DB.settings);
+  writeServerStore();
+  updateSyncBadge();
+}
+function writeServerStore(){
+  save("spk_server_store",{
+    version:"4.0",
+    updated:DB.settings.lastSync,
+    counts:{users:DB.users.length,apps:DB.apps.length,jenis:DB.jenis.length,cuti:DB.cuti.length},
+    users:DB.users, apps:DB.apps, jenis:DB.jenis, cuti:DB.cuti, settings:DB.settings
+  });
+}
+function logSync(m){
+  DB.log = DB.log || [];
+  DB.log.unshift({t:new Date().toISOString(), m:m});
+  if(DB.log.length>60) DB.log.length = 60;
+  save("spk_log",DB.log);
+  renderSyncLog();
+}
+function updateSyncBadge(){
+  const t = DB.settings.lastSync ? new Date(DB.settings.lastSync) : null;
+  const el = $("syncTime");
+  if(el && t) el.textContent = "segerak "+t.toLocaleTimeString("ms-MY",{hour:"2-digit",minute:"2-digit"});
+}
+function syncNow(){
+  writeServerStore();
+  DB.settings.lastSync = new Date().toISOString();
+  save("spk_set",DB.settings);
+  logSync("Penyegerakan berjaya — "+DB.apps.length+" permohonan, "+DB.users.length+" pengguna dihantar ke pelayan.");
+  updateSyncBadge();
+  renderSyncInfo(); renderSyncLog();
+  toast("Data disegerak ke pelayan tempatan.");
+}
+function backupServer(){
+  const blob = new Blob([JSON.stringify({
+    version:"4.0", exported:new Date().toISOString(),
+    users:DB.users, apps:DB.apps, jenis:DB.jenis, cuti:DB.cuti, settings:DB.settings
+  },null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "SPK-Sarawak-Sandaran-"+todayStr()+".json";
+  a.click();
+  logSync("Sandaran pangkalan data dimuat turun.");
+  toast("Sandaran JSON dimuat turun.");
+}
+function restoreServer(ev){
+  const f = ev.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try{
+      const d = JSON.parse(e.target.result);
+      if(d.users) DB.users = d.users;
+      if(d.apps) DB.apps = d.apps;
+      if(d.jenis) DB.jenis = d.jenis;
+      if(d.cuti) DB.cuti = d.cuti;
+      if(d.settings) DB.settings = Object.assign(DB.settings||{}, d.settings);
+      persist();
+      logSync("Pemulihan pangkalan data daripada fail sandaran berjaya.");
+      renderAll(); updateNotifCount();
+      toast("Data dipulihkan daripada fail sandaran.");
+    }catch(err){ toast("Fail sandaran tidak sah.","err") }
+  };
+  r.readAsText(f);
+  ev.target.value = "";
+}
+function renderSyncInfo(){
+  const box = $("syncInfo"); if(!box) return;
+  const t = DB.settings.lastSync ? new Date(DB.settings.lastSync).toLocaleString("ms-MY") : "—";
+  box.innerHTML =
+    '<p>Alamat pelayan: <b class="text-gold-300">'+(DB.settings.serverUrl||"http://localhost:3000")+'</b></p>'+
+    '<p>Pengguna: <b class="text-gold-300">'+DB.users.length+'</b> • Jenis permohonan: <b class="text-gold-300">'+DB.jenis.length+'</b></p>'+
+    '<p>Rekod permohonan: <b class="text-gold-300">'+DB.apps.length+'</b> • Tarikh dikecualikan: <b class="text-gold-300">'+DB.cuti.length+'</b></p>'+
+    '<p>Penyegerakan terakhir: <b class="text-gold-300">'+t+'</b></p>';
+  const st = $("syncStatus");
+  if(st) st.textContent = "Aktif • "+(DB.settings.serverUrl||"http://localhost:3000");
+}
+function renderSyncLog(){
+  const box = $("syncLog"); if(!box) return;
+  box.innerHTML = (DB.log||[]).map(l=>{
+    const d = new Date(l.t);
+    return '<div>['+d.toLocaleString("ms-MY")+'] '+esc(l.m)+'</div>';
+  }).join("") || '<div>Tiada log.</div>';
+}
+
+/* ================================================================
+   MACRO ENGINE — NETWORKDAYS
+================================================================ */
+function cutiMap(){ const m={}; DB.cuti.forEach(c=>m[c.date]=c.name); return m }
+function getJenis(code){ return DB.jenis.find(j=>j.code===code) }
+function curUser(){ return DB.users.find(u=>u.uid===DB.session) || null }
+function isAdmin(){ const u=curUser(); return !!(u && u.role==="admin") }
+
+function kiraTempoh(mohon,lulus){
+  if(!mohon || !lulus) return null;
+  const s = new Date(mohon+"T00:00:00"), e = new Date(lulus+"T00:00:00");
+  if(isNaN(s) || isNaN(e)) return null;
+  if(e < s) return {error:"Tarikh diluluskan lebih awal daripada tarikh permohonan."};
+  const cmap = cutiMap();
+  let kal=0, kerja=0, wk=0, ct=0; const ctList=[];
+  const d = new Date(s);
+  while(d <= e){
+    kal++;
+    const iso = isoDate(d);
+    const day = d.getDay();
+    const isSat = day===6 && DB.settings.excludeSat;
+    const isSun = day===0 && DB.settings.excludeSun;
+    if(isSat || isSun){ wk++; }
+    else if(cmap[iso]){ ct++; ctList.push({date:iso, name:cmap[iso]}); }
+    else { kerja++; }
+    d.setDate(d.getDate()+1);
+  }
+  return {kalendar:kal, bekerja:kerja, weekend:wk, cuti:ct, cutiList:ctList};
+}
+
+function enrich(a){
+  const j = getJenis(a.jenisCode);
+  const kpi = (a.kpi!=null) ? a.kpi : (j ? j.kpi : 0);
+  if(a.tarikhLulus){
+    const k = kiraTempoh(a.tarikhMohon, a.tarikhLulus);
+    if(k && !k.error){
+      return Object.assign({},a,{
+        jenisName: j?j.name:"(Dipadam)", jenisCat: j?j.cat:"—", kpi, kalendar:k.kalendar, bekerja:k.bekerja,
+        weekend:k.weekend, cuti:k.cuti, cutiList:k.cutiList, bekerjANow:null,
+        varians:k.bekerja-kpi, status: k.bekerja<=kpi ? "Menepati KPI" : "Lewat"
+      });
+    }
+  }
+  const k2 = kiraTempoh(a.tarikhMohon, todayStr());
+  const b = (k2 && !k2.error) ? k2.bekerja : 0;
+  return Object.assign({},a,{
+    jenisName: j?j.name:"(Dipadam)", jenisCat: j?j.cat:"—", kpi,
+    kalendar: (k2 && !k2.error) ? k2.kalendar : 0,
+    bekerja:null, bekerjaNow:b, weekend:0, cuti:0, cutiList:[], varians:null,
+    status: b>kpi ? "Lewat Proses" : "Dalam Proses"
+  });
+}
+
+function statusBadge(s){
+  if(s==="Menepati KPI") return '<span class="badge b-green">● Menepati KPI</span>';
+  if(s==="Lewat") return '<span class="badge b-red">● Lewat</span>';
+  if(s==="Dalam Proses") return '<span class="badge b-blue">● Dalam Proses</span>';
+  return '<span class="badge b-amber">● Lewat Proses</span>';
+}
+
+/* ================================================================
+   AUTH
+================================================================ */
+function doLogin(){
+  const id = $("loginId").value.trim().toUpperCase(), pw = $("loginPass").value;
+  const u = DB.users.find(x=>x.uid.toUpperCase()===id && x.password===pw);
+  if(!u){ toast("ID atau kata laluan salah. Cuba akaun demo.","err"); return }
+  DB.session = u.uid;
+  u.lastLogin = new Date().toLocaleString("ms-MY");
+  u.devices = (u.devices||0)+1;
+  save("spk_users",DB.users);
+  save("spk_sess",DB.session);
+  logSync("Log masuk: "+u.uid+" ("+u.role+")");
+  enterApp();
+  toast("Selamat datang, "+esc(u.name));
+}
+function quickLogin(id,pw){ $("loginId").value=id; $("loginPass").value=pw; doLogin() }
+function doRegister(){
+  const n=$("regName").value.trim(), id=$("regId").value.trim().toUpperCase(), pw=$("regPass").value, off=$("regOffice").value;
+  if(!n||!id||!pw){ toast("Lengkapkan nama, ID dan kata laluan.","err"); return }
+  if(pw.length<6){ toast("Kata laluan minima 6 aksara.","err"); return }
+  if(DB.users.some(u=>u.uid.toUpperCase()===id)){ toast("ID telah wujud. Pilih ID lain.","err"); return }
+  DB.users.push({name:n,uid:id,office:off,role:"user",password:pw,assigned:["all"],lastLogin:"—",created:todayStr()});
+  persist();
+  logSync("Akaun baharu didaftarkan: "+id);
+  toast("Akaun dicipta. Sila log masuk.");
+  switchTab("login");
+  $("loginId").value = id;
+}
+function doLogout(){
+  logSync("Log keluar: "+(DB.session||"—"));
+  DB.session = null; save("spk_sess",null); location.reload();
+}
+function switchTab(t){
+  const L = t==="login";
+  $("tabLogin").className = L ? "py-2.5 rounded-xl text-sm font-extrabold bg-navy-900 text-white shadow" : "py-2.5 rounded-xl text-sm font-extrabold text-slate-500";
+  $("tabRegister").className = !L ? "py-2.5 rounded-xl text-sm font-extrabold bg-navy-900 text-white shadow" : "py-2.5 rounded-xl text-sm font-extrabold text-slate-500";
+  $("paneLogin").classList.toggle("hidden",!L);
+  $("paneRegister").classList.toggle("hidden",L);
+}
+$("tabLogin").onclick = ()=>switchTab("login");
+$("tabRegister").onclick = ()=>switchTab("register");
+
+function enterApp(){
+  $("loginView").classList.add("hidden");
+  $("loginView").classList.remove("lg:grid");
+  $("appView").classList.remove("hidden");
+  initApp();
+}
+
+/* ================================================================
+   NAV
+================================================================ */
+const TITLES = {dashboard:"Dashboard",borang:"Permohonan Baharu",rawdata:"Sheet Raw Data",laporan:"Laporan & Excel",cuti:"Kalendar Cuti Dikecualikan",jenis:"Jenis & Tempoh KPI",pengguna:"Pengurusan Pengguna",tetapan:"Tetapan & Pelayan",panduan:"Panduan Macro"};
+
+function showPage(p){
+  if((p==="cuti"||p==="jenis"||p==="pengguna") && !isAdmin()){ toast("Halaman ini khusus untuk Admin.","err"); return }
+  document.querySelectorAll(".page").forEach(s=>s.classList.add("hidden"));
+  const t = $("page-"+p); if(t) t.classList.remove("hidden");
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("active", b.dataset.page===p));
+  $("pageTitle").textContent = TITLES[p] || p;
+  toggleSidebar(false);
+  if(p==="tetapan"){ renderSyncInfo(); renderSyncLog() }
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function toggleSidebar(force){
+  const sb=$("sidebar"), ov=$("sidebarOverlay");
+  const show = (force!==undefined) ? force : sb.classList.contains("-translate-x-full");
+  sb.classList.toggle("-translate-x-full",!show);
+  ov.classList.toggle("hidden",!show);
+}
+function toggleNotif(e){
+  e.stopPropagation();
+  const d=$("notifDrop");
+  d.classList.toggle("hidden");
+  if(!d.classList.contains("hidden")) renderNotif();
+}
+document.addEventListener("click",e=>{
+  const d=$("notifDrop");
+  if(d && !d.classList.contains("hidden") && !d.contains(e.target)) d.classList.add("hidden");
+});
+function renderNotif(){
+  const all = DB.apps.map(enrich);
+  const lewat = all.filter(a=>a.status==="Lewat"||a.status==="Lewat Proses").slice(0,5);
+  $("notifDrop").innerHTML =
+    '<p class="font-extrabold text-sm mb-2">Notifikasi ('+lewat.length+' lewat)</p>'+
+    (lewat.length ? lewat.map(a=>
+      '<div class="rounded-xl bg-red-50 border border-red-200 p-3 mb-2 text-xs"><b>'+esc(a.id)+'</b> — '+esc(a.jenisName.slice(0,48))+'...<br><span class="text-red-700 font-bold">'+a.status+' • '+(a.bekerja??a.bekerjaNow)+' hari / KPI '+a.kpi+'</span></div>'
+    ).join("") : '<p class="text-xs text-slate-500 font-semibold">Tiada permohonan lewat. Tahniah!</p>')+
+    '<button onclick="showPage(\'rawdata\')" class="w-full mt-1 py-2 rounded-xl bg-navy-900 text-white text-xs font-extrabold">Lihat Raw Data</button>';
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+let chC=null, chT=null, chK=null, chL=null;
+let rawPage=1, lastReport=[], calY=2026, calM=9, editingJenis=null, editingUser=null;
+
+function initApp(){
+  const u = curUser();
+  if(!u){ location.reload(); return }
+
+  $("userName").textContent = u.name;
+  $("userOffice").textContent = u.office;
+  $("userAvatar").textContent = u.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  $("userRoleBadge").textContent = u.role==="admin" ? "ADMIN" : "PENGGUNA";
+  $("userRoleBadge").style.background = u.role==="admin" ? "#c9a86a" : "#0ea5a0";
+  $("userRoleBadge").style.color = u.role==="admin" ? "#071426" : "#fff";
+
+  $("dashGreetOffice").textContent = u.office.toUpperCase();
+  const h = new Date().getHours();
+  const greet = h<12 ? "Selamat pagi" : (h<18 ? "Selamat petang" : "Selamat malam");
+  $("dashGreet").textContent = greet+", "+u.name.split(" ")[0];
+  $("topbarDate").textContent = new Date().toLocaleDateString("ms-MY",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+  document.querySelectorAll(".adminOnly").forEach(b=>b.style.display = u.role==="admin" ? "flex" : "none");
+  if(u.role!=="admin") $("adminMenuLabel").style.display = "none";
+
+  OFFICES.forEach(o=>{
+    ["regOffice","fPejabat","uOffice","rawPejabat","lapPejabat"].forEach(id=>{
+      const s = $(id); if(!s) return;
+      if(![...s.options].some(op=>op.value===o)){
+        const op = document.createElement("option"); op.value=o; op.textContent=o; s.appendChild(op);
+      }
+    });
+  });
+  $("regOffice").value = OFFICES[0];
+  $("fPejabat").value = u.office;
+  $("setOffice").value = DB.settings.office || OFFICES[0];
+  $("setSat").checked = DB.settings.excludeSat;
+  $("setSun").checked = DB.settings.excludeSun;
+  $("chkSat").checked = DB.settings.excludeSat;
+  $("chkSun").checked = DB.settings.excludeSun;
+
+  const d = new Date(); calY = d.getFullYear(); calM = d.getMonth();
+
+  $("fMohon").value = todayStr();
+  $("fLulus").value = todayStr();
+  $("cutiDate").value = todayStr();
+  if(isAdmin()){ $("lapDari").value = "2026-01-01"; $("lapHingga").value = todayStr() }
+
+  buildKategori();
+  renderJenisOptions();
+  resetRujukan();
+  buildFilterSelects();
+  renderVba();
+
+  renderAll();
+  renderSyncInfo();
+  renderSyncLog();
+  updateSyncBadge();
+  showPage("dashboard");
+}
+
+function buildKategori(){
+  $("fKategori").innerHTML = '<option value="">Semua Kategori</option>'+CATS.map(c=>'<option>'+esc(c)+'</option>').join("");
+}
+function resetRujukan(){
+  const max = Math.max(0,...DB.apps.map(a=>parseInt(a.id.split("-").pop())||0));
+  $("fRujukan").value = "SPK-2026-"+(max+1);
+}
+function buildFilterSelects(){
+  const opts = '<option value="">Semua Jenis</option>'+DB.jenis.filter(j=>j.active).map(j=>'<option value="'+j.code+'">'+j.code+' — '+esc(j.name.slice(0,58))+'...</option>').join("");
+  $("rawJenis").innerHTML = opts;
+  $("lapJenis").innerHTML = opts;
+  $("rawPejabat").innerHTML = '<option value="">Semua Pejabat</option>'+OFFICES.map(o=>'<option>'+o+'</option>').join("");
+  $("lapPejabat").innerHTML = '<option value="">Semua Pejabat</option>'+OFFICES.map(o=>'<option>'+o+'</option>').join("");
+  $("jenisCatFilter").innerHTML = '<option value="">Semua Kategori</option>'+CATS.map(c=>'<option>'+esc(c)+'</option>').join("");
+  $("catList").innerHTML = CATS.map(c=>'<option value="'+esc(c)+'">').join("");
+}
+function allowedJenis(){
+  const u = curUser(); if(!u) return [];
+  if(u.role==="admin" || (u.assigned||[]).includes("all")) return DB.jenis.filter(j=>j.active);
+  return DB.jenis.filter(j=>j.active && u.assigned.includes(j.code));
+}
+function renderJenisOptions(){
+  const q = ($("jenisSearch").value||"").toLowerCase(), kat = $("fKategori").value;
+  const list = allowedJenis().filter(j =>
+    (!kat || j.cat===kat) &&
+    (!q || j.name.toLowerCase().includes(q) || j.code.includes(q) || j.cat.toLowerCase().includes(q))
+  );
+  $("fJenis").innerHTML = list.length
+    ? list.map(j=>'<option value="'+j.code+'">'+j.code+' • '+esc(j.name)+' [KPI '+j.kpi+' hari'+(j.custom?' • FLEKSIBEL':'')+']</option>').join("")
+    : '<option value="">— Tiada jenis sepadan —</option>';
+  if(list.length && !$("fJenis").value) $("fJenis").value = list[0].code;
+  onJenisChange();
+}
+function onKategoriChange(){ renderJenisOptions() }
+function getLastCustomKPI(uid,code){
+  const f = DB.apps.filter(a=>a.pegawaiId===uid && a.jenisCode===code);
+  if(!f.length) return null;
+  f.sort((a,b)=>String(b.created).localeCompare(String(a.created)));
+  return f[0].kpi;
+}
+function onJenisChange(){
+  const code = $("fJenis").value, j = getJenis(code);
+  if(!j){ $("jenisInfoCard").classList.add("hidden"); return }
+  const card = $("jenisInfoCard");
+  card.classList.remove("hidden");
+  card.innerHTML =
+    '<div class="flex flex-wrap items-center gap-2">'+
+      '<span class="chip !bg-gold-500 !text-navy-950">KOD '+j.code+'</span>'+
+      '<span class="text-[11px] font-bold text-white/60">'+esc(j.cat)+'</span>'+
+      '<span class="ml-auto badge '+(j.custom?"b-amber":"b-green")+'">'+(j.custom?"KPI FLEKSIBEL — pilih sendiri":"KPI TETAP")+'</span>'+
+    '</div>'+
+    '<p class="font-bold mt-2 leading-snug">'+esc(j.name)+'</p>'+
+    '<p class="text-gold-300 font-extrabold mt-1">Sasaran KPI: '+j.kpi+' hari bekerja '+(j.custom?'<span class="text-white/60 font-semibold">(boleh ubah di bawah)</span>':'')+'</p>';
+
+  const kpiIn = $("fKpi");
+  if(j.custom){
+    kpiIn.removeAttribute("readonly");
+    kpiIn.classList.add("bg-amber-50");
+    $("kpiLock").textContent = "FLEKSIBEL";
+    $("kpiLock").className = "shrink-0 px-3 rounded-xl bg-gold-500 text-navy-950 text-[11px] font-extrabold flex items-center";
+    const last = getLastCustomKPI(curUser().uid, j.code);
+    kpiIn.value = last!=null ? last : j.kpi;
+    $("kpiHint").innerHTML = last!=null
+      ? 'Auto-dimuat dari rekod anda sebelum ini: <b>'+last+' hari</b>. Ubah jika perlu.'
+      : 'Tiada rekod sebelum ini — mula dengan <b>'+j.kpi+' hari</b>. Boleh ubah.';
+    const box = $("kpiAutoBox");
+    box.classList.remove("hidden");
+    const four = ["25","26","27","28","29"].filter(c=>getJenis(c));
+    box.innerHTML = '<p class="font-extrabold text-navy-900 text-xs tracking-wide">JENIS LAIN &amp; KPI ANDA</p>'+
+      '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">'+
+      four.map(c=>{
+        const jj = getJenis(c), lv = getLastCustomKPI(curUser().uid,c);
+        return '<div class="bg-white rounded-xl border p-2 text-center">'+
+          '<p class="text-[10px] font-extrabold text-slate-500">'+c+' • KPI '+(lv!=null?lv:jj.kpi)+'h</p>'+
+          '<p class="text-[11px] font-bold leading-tight">'+esc(jj.name.slice(0,32))+'...</p>'+
+          (lv!=null ? '<p class="text-[10px] font-bold text-emerald-700">✓ auto</p>' : '<p class="text-[10px] font-bold text-slate-400">default</p>')+
+        '</div>';
+      }).join("")+'</div>';
+  } else {
+    kpiIn.setAttribute("readonly","readonly");
+    kpiIn.classList.remove("bg-amber-50");
+    kpiIn.value = j.kpi;
+    $("kpiLock").textContent = "AUTO";
+    $("kpiLock").className = "shrink-0 px-3 rounded-xl bg-slate-100 text-[11px] font-extrabold flex items-center";
+    $("kpiHint").textContent = "KPI ditetapkan admin mengikut jenis.";
+    $("kpiAutoBox").classList.add("hidden");
+  }
+
+  const ph = $("pklbHistory");
+  const mine = DB.apps.filter(a=>a.pegawaiId===curUser().uid);
+  ph.innerHTML = mine.length
+    ? '<p class="font-extrabold text-navy-900">Rekod terakhir anda ('+mine.length+'):</p>'+
+      mine.slice(-4).reverse().map(a=>{
+        const e = enrich(a);
+        return '<div class="mt-1.5 rounded-xl bg-slate-50 border p-2">Kod '+a.jenisCode+' • KPI '+e.kpi+'h • '+e.status+' • '+fmtDs(a.tarikhMohon)+'</div>';
+      }).join("")
+    : '<p class="text-slate-500 font-semibold">Belum ada rekod untuk akaun ini.</p>';
+
+  liveKira();
+}
+
+function toggleLulus(){
+  const on = $("chkSudahLulus").checked;
+  $("fLulus").disabled = !on;
+  $("fLulus").classList.toggle("opacity-40",!on);
+  liveKira();
+}
+
+function collectForm(){
+  const code = $("fJenis").value;
+  if(!code){ toast("Pilih jenis permohonan dahulu.","err"); return null }
+  const pemohon = $("fPemohon").value.trim();
+  if(!pemohon){ toast("Isi nama pemohon.","err"); return null }
+  const mohon = $("fMohon").value;
+  if(!mohon){ toast("Isi tarikh permohonan.","err"); return null }
+  const sudah = $("chkSudahLulus").checked;
+  const lulus = sudah ? $("fLulus").value : null;
+  if(sudah && !lulus){ toast("Isi tarikh diluluskan atau nyah-tanda jika belum lulus.","err"); return null }
+  if(sudah && lulus < mohon){ toast("Tarikh diluluskan tidak boleh lebih awal daripada tarikh permohonan.","err"); return null }
+  const kpi = parseInt($("fKpi").value);
+  if(isNaN(kpi) || kpi<0){ toast("Tempoh KPI tidak sah.","err"); return null }
+  return {code,pemohon,kp:$("fKp").value.trim(),tel:$("fTel").value.trim(),pejabat:$("fPejabat").value,mohon,lulus,kpi,catatan:$("fCatatan").value.trim()};
+}
+function collectSilent(){
+  try{
+    const code = $("fJenis").value;
+    if(!code || !$("fMohon").value) return null;
+    const sudah = $("chkSudahLulus").checked;
+    return {mohon:$("fMohon").value, lulus: sudah ? $("fLulus").value : null, kpi: parseInt($("fKpi").value)||0};
+  }catch(e){ return null }
+}
+function liveKira(){
+  const d = collectSilent();
+  if(!d){ $("prevKalendar").textContent="—"; $("prevBekerja").textContent="—"; return }
+  const end = d.lulus || todayStr();
+  const k = kiraTempoh(d.mohon,end);
+  if(!k || k.error){ $("prevBekerja").textContent="!"; return }
+  $("prevKalendar").textContent = k.kalendar+" hari";
+  $("prevBekerja").textContent = k.bekerja+" hari";
+  $("prevWeekend").textContent = k.weekend+" hari";
+  $("prevCuti").textContent = k.cuti+" hari";
+  $("prevKpi").textContent = d.kpi+" hari";
+  const st = !d.lulus ? (k.bekerja>d.kpi ? "Lewat Proses" : "Dalam Proses") : (k.bekerja<=d.kpi ? "Menepati KPI" : "Lewat");
+  $("prevStatus").innerHTML = statusBadge(st);
+  $("prevCutiList").innerHTML = k.cutiList.length
+    ? "Dikecualikan: "+k.cutiList.map(c=>c.date+" ("+esc(c.name)+")").join(" • ")
+    : "Tiada cuti dikecualikan dalam julat ini.";
+  $("prevFormula").textContent = '=NETWORKDAYS("'+d.mohon+'","'+end+'",Cuti['+DB.cuti.length+']) → '+k.bekerja+' hari bekerja';
+}
+function previewMacro(){
+  const d = collectForm(); if(!d) return;
+  liveKira();
+  toast("Tempoh dikira oleh makro. Semak panel Enjin Macro.","info");
+  const panel = document.querySelector("#page-borang .bg-navy-950");
+  if(panel) panel.scrollIntoView({behavior:"smooth",block:"center"});
+}
+function generatePermohonan(){
+  const d = collectForm(); if(!d) return;
+  const u = curUser();
+  const max = Math.max(0,...DB.apps.map(a=>parseInt(a.id.split("-").pop())||0));
+  const rec = {
+    id: $("fRujukan").value || ("SPK-2026-"+(max+1)),
+    jenisCode: d.code, pemohon: d.pemohon, kp: d.kp, tel: d.tel, pejabat: d.pejabat,
+    pegawaiId: u.uid, pegawaiName: u.name,
+    tarikhMohon: d.mohon, tarikhLulus: d.lulus, kpi: d.kpi, catatan: d.catatan,
+    created: new Date().toISOString()
+  };
+  DB.apps.push(rec);
+  persist();
+  logSync("Rekod baharu "+rec.id+" dijana oleh "+u.uid+" ("+d.mohon+" → "+(d.lulus||"belum lulus")+").");
+  const e = enrich(rec);
+  toast("<b>"+rec.id+"</b> dijana → Raw Data: <b>"+(e.bekerja??e.bekerjaNow)+" hari bekerja</b> (KPI "+e.kpi+") • "+e.status);
+  resetBorang();
+  renderAll();
+}
+function resetBorang(){
+  $("fPemohon").value=""; $("fKp").value=""; $("fTel").value=""; $("fCatatan").value="";
+  $("jenisSearch").value=""; $("fKategori").value="";
+  renderJenisOptions();
+  resetRujukan();
+  $("fMohon").value = todayStr();
+  $("fLulus").value = todayStr();
+  $("chkSudahLulus").checked = true;
+  $("fLulus").disabled = false;
+  liveKira();
+}
+function renderVba(){
+  $("vbaCode").textContent =
+`Function KiraTempohHari(TarikhMohon As Date, TarikhLulus As Date) As Long
+    Dim d As Date, Hari As Long
+    Dim Cuti As Range
+    Set Cuti = Sheets("CUTI_DIKECUALIKAN").Range("A:A")
+    Hari = 0
+    For d = TarikhMohon To TarikhLulus
+        If Weekday(d, vbMonday) <= 5 Then
+            If IsError(Application.Match(CLng(d), Cuti, 0)) Then
+                Hari = Hari + 1
+            End If
+        End If
+    Next d
+    KiraTempohHari = Hari
+End Function
+
+' Penggunaan di Sheet RAW_DATA (Kolum H - Hari Bekerja):
+'   =KiraTempohHari([@TarikhMohon];[@TarikhLulus])
+
+' Status (Kolum J):
+'   =IF([@HariBekerja]="";"Dalam Proses";
+'       IF([@HariBekerja]<=[@KPI];"Menepati KPI";"Lewat"))`;
+}
+function openMacro(){ renderVba(); openModal("modalMacro") }
+function copyVBA(){
+  navigator.clipboard.writeText($("vbaCode").innerText).then(()=>toast("Kod VBA disalin.")).catch(()=>toast("Salin gagal — pilih kod secara manual.","err"));
+}
+
+/* ================================================================
+   RENDER ALL
+================================================================ */
+function renderAll(){
+  renderDashboard();
+  renderRaw();
+  renderCuti();
+  renderJenisAdmin();
+  renderPengguna();
+  renderSyncInfo();
+  updateNotifCount();
+}
+function updateNotifCount(){
+  const n = DB.apps.map(enrich).filter(a=>a.status==="Lewat"||a.status==="Lewat Proses").length;
+  $("notifCount").textContent = n;
+  $("cutiCountBadge").textContent = DB.cuti.length;
+  $("cutiCount").textContent = DB.cuti.length+" tarikh";
+}
+
+/* ---- DASHBOARD ---- */
+function renderDashboard(){
+  const all = DB.apps.map(enrich);
+  const done = all.filter(a=>a.tarikhLulus);
+  const proc = all.filter(a=>!a.tarikhLulus);
+  const ok = done.filter(a=>a.status==="Menepati KPI").length;
+  const lateDone = done.filter(a=>a.status==="Lewat").length;
+  const lateProc = all.filter(a=>a.status==="Lewat Proses").length;
+
+  $("statTotal").textContent = all.length;
+  $("statTepati").textContent = ok;
+  $("statLewat").textContent = lateDone + lateProc;
+  $("statProses").textContent = proc.length;
+
+  const pct = done.length ? Math.round(ok/done.length*100) : 0;
+  $("statPct").textContent = pct;
+  $("complianceBar").style.width = pct+"%";
+  $("complianceSub").textContent = ok+" menepati daripada "+done.length+" selesai";
+
+  if(chC) chC.destroy();
+  if(chT) chT.destroy();
+  if(chK) chK.destroy();
+
+  chC = new Chart($("chartCompliance"),{
+    type:"doughnut",
+    data:{labels:["Menepati KPI","Lewat","Dalam Proses","Lewat Proses"],
+      datasets:[{data:[ok,lateDone,proc.length-lateProc,lateProc],
+        backgroundColor:["#10b981","#ef4444","#3b82f6","#f59e0b"],borderWidth:3,borderColor:"#fff"}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:12,font:{size:11,weight:"bold"}}}},cutout:"62%"}
+  });
+
+  const months = ["01","02","03","04","05","06","07","08","09","10","11","12"];
+  const mCount = months.map(m=>all.filter(a=>a.tarikhMohon.slice(5,7)===m).length);
+  const mPct = months.map(m=>{
+    const dd = all.filter(a=>a.tarikhMohon.slice(5,7)===m && a.tarikhLulus);
+    return dd.length ? Math.round(dd.filter(a=>a.status==="Menepati KPI").length/dd.length*100) : 0;
+  });
+  chT = new Chart($("chartTrend"),{
+    type:"bar",
+    data:{labels:months.map(m=>"2026-"+m),datasets:[
+      {label:"Bil. Permohonan",data:mCount,backgroundColor:"#0b1f35",borderRadius:8},
+      {label:"% Pematuhan",data:mPct,type:"line",borderColor:"#c9a86a",backgroundColor:"#c9a86a",tension:.4,yAxisID:"y1"}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{y:{beginAtZero:true},y1:{position:"right",min:0,max:100,grid:{drawOnChartArea:false}}},
+      plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}}}
+  });
+
+  const catAvg = CATS.map(c=>{
+    const f = all.filter(a=>a.jenisCat===c && a.bekerja!=null);
+    return f.length ? +(f.reduce((s,x)=>s+x.bekerja,0)/f.length).toFixed(1) : 0;
+  });
+  const catKpi = CATS.map(c=>{
+    const f = DB.jenis.filter(j=>j.cat===c && j.active);
+    return f.length ? +(f.reduce((s,x)=>s+x.kpi,0)/f.length).toFixed(1) : 0;
+  });
+  chK = new Chart($("chartKategori"),{
+    type:"bar",
+    data:{labels:CATS.map(c=>c.split(" ")[0].replace(",","")),datasets:[
+      {label:"Purata Hari Bekerja",data:catAvg,backgroundColor:"#0ea5a0",borderRadius:8},
+      {label:"Purata Sasaran KPI",data:catKpi,backgroundColor:"#c9a86a",borderRadius:8}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}
+  });
+
+  $("recentTable").innerHTML = [...all].sort((a,b)=>String(b.created).localeCompare(String(a.created))).slice(0,5).map(a=>
+    '<tr><td class="mono font-bold">'+a.id+'</td>'+
+    '<td class="max-w-[240px] truncate">'+esc(a.jenisName)+'</td>'+
+    '<td>'+esc(a.pemohon)+'</td>'+
+    '<td class="mono text-xs">'+fmtDs(a.tarikhMohon)+' → '+(a.tarikhLulus?fmtDs(a.tarikhLulus):"—")+'</td>'+
+    '<td class="font-extrabold">'+(a.bekerja!=null?a.bekerja:(a.bekerjaNow+"*"))+'</td>'+
+    '<td>'+statusBadge(a.status)+'</td></tr>'
+  ).join("") || '<tr><td colspan="6" class="text-center py-6 text-slate-400">Tiada rekod</td></tr>';
+
+  const up = [...DB.cuti].filter(c=>c.date>=todayStr()).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+  $("upcomingCutiList").innerHTML = up.length ? up.map(c=>
+    '<div class="flex items-center gap-3 rounded-xl bg-red-50 border border-red-200 p-2.5">'+
+      '<div class="w-10 h-10 rounded-xl bg-red-600 text-white flex flex-col items-center justify-center font-extrabold leading-none">'+
+        '<span class="text-sm">'+c.date.slice(8)+'</span>'+
+        '<span class="text-[9px]">'+["","JAN","FEB","MAC","APR","MEI","JUN","JUL","OGO","SEP","OKT","NOV","DIS"][+c.date.slice(5,7)]+'</span>'+
+      '</div>'+
+      '<div><p class="font-extrabold text-[13px]">'+esc(c.name)+'</p>'+
+      '<p class="text-[11px] text-slate-500 mono">'+c.date+' • makro tidak kira</p></div>'+
+    '</div>'
+  ).join("") : '<p class="text-xs text-slate-400 font-semibold">Tiada cuti akan datang.</p>';
+
+  const lw = all.filter(a=>a.status.includes("Lewat")).slice(0,4);
+  $("topLewatList").innerHTML = lw.length ? lw.map(a=>
+    '<div class="rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[13px]">'+
+      '<b>'+a.id+'</b> • '+esc(a.pemohon)+'<br>'+
+      '<span class="text-xs text-slate-500">'+esc(a.jenisName.slice(0,50))+'...</span><br>'+
+      '<span class="badge b-red mt-1">'+(a.bekerja??a.bekerjaNow)+' hari / KPI '+a.kpi+'</span>'+
+    '</div>'
+  ).join("") : '<p class="text-xs text-slate-400 font-semibold">Tiada kelewatan. Kekalkan prestasi!</p>';
+}
+
+/* ---- RAW DATA ---- */
+function switchRawTab(t,el){
+  document.querySelectorAll(".sheet-tab").forEach(x=>x.classList.remove("active"));
+  el.classList.add("active");
+  ["data","ringkasan","cuti"].forEach(k=>$("rawTab-"+k).classList.add("hidden"));
+  $("rawTab-"+t).classList.remove("hidden");
+  if(t!=="data") renderRawExtra(t);
+}
+function changeRawPage(d){ rawPage += d; if(rawPage<1) rawPage=1; renderRaw() }
+function filteredRaw(){
+  let all = DB.apps.map(enrich);
+  const q = ($("rawSearch").value||"").toLowerCase(), j=$("rawJenis").value, s=$("rawStatus").value,
+        p=$("rawPejabat").value, df=$("rawDari").value, hg=$("rawHingga").value;
+  if(q) all = all.filter(a=>(a.id+a.pemohon+a.jenisName).toLowerCase().includes(q));
+  if(j) all = all.filter(a=>a.jenisCode===j);
+  if(s) all = all.filter(a=>a.status===s);
+  if(p) all = all.filter(a=>a.pejabat===p);
+  if(df) all = all.filter(a=>a.tarikhMohon>=df);
+  if(hg) all = all.filter(a=>a.tarikhMohon<=hg);
+  return all.sort((a,b)=>b.tarikhMohon.localeCompare(a.tarikhMohon));
+}
+function renderRaw(){
+  const all = filteredRaw();
+  $("rawCount").textContent = all.length+" rekod";
+  const per = parseInt($("rawPerPage").value||"10");
+  const pages = Math.max(1,Math.ceil(all.length/per));
+  if(rawPage>pages) rawPage = pages;
+  const slice = all.slice((rawPage-1)*per, rawPage*per);
+
+  $("rawTableBody").innerHTML = slice.length ? slice.map((a,i)=>
+    '<tr>'+
+      '<td class="text-slate-400 font-bold">'+((rawPage-1)*per+i+1)+'</td>'+
+      '<td class="mono font-extrabold text-navy-900">'+a.id+'</td>'+
+      '<td class="max-w-[300px]"><span class="font-bold text-[12px] text-gold-700">Kod '+a.jenisCode+'</span><br><span class="truncate block max-w-[300px]">'+esc(a.jenisName)+'</span></td>'+
+      '<td>'+esc(a.pemohon)+'</td>'+
+      '<td class="text-xs">'+esc(a.pejabat.replace("Pejabat Daerah ",""))+'</td>'+
+      '<td class="mono text-xs">'+fmtDs(a.tarikhMohon)+'</td>'+
+      '<td class="mono text-xs">'+(a.tarikhLulus?fmtDs(a.tarikhLulus):"—")+'</td>'+
+      '<td class="font-extrabold text-center '+(a.bekerja!=null?(a.status==="Menepati KPI"?"text-emerald-700":"text-red-700"):"text-amber-600")+'">'+(a.bekerja!=null?a.bekerja:(a.bekerjaNow+"*"))+'</td>'+
+      '<td class="text-center font-bold">'+a.kpi+'</td>'+
+      '<td>'+statusBadge(a.status)+'</td>'+
+      '<td class="no-print">'+
+        '<button onclick="viewRecord(\''+a.id+'\')" class="px-2.5 py-1 rounded-lg bg-slate-100 text-[11px] font-extrabold hover:bg-slate-200">Lihat</button> '+
+        (isAdmin()?'<button onclick="askDelete(\''+a.id+'\')" class="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 text-[11px] font-extrabold hover:bg-red-100">Padam</button>':'')+
+      '</td>'+
+    '</tr>'
+  ).join("") : '<tr><td colspan="11" class="text-center py-10 text-slate-400 font-bold">Tiada rekod sepadan dengan tapisan.</td></tr>';
+
+  $("rawPageInfo").textContent = "Halaman "+rawPage+" daripada "+pages+" • "+all.length+" rekod";
+}
+function renderRawExtra(t){
+  if(t==="ringkasan"){
+    const all = DB.apps.map(enrich);
+    const rows = DB.jenis.filter(j=>j.active).map(j=>{
+      const f = all.filter(a=>a.jenisCode===j.code);
+      const d = f.filter(a=>a.bekerja!=null);
+      const avg = d.length ? (d.reduce((s,x)=>s+x.bekerja,0)/d.length).toFixed(1) : "—";
+      const ok = d.filter(a=>a.status==="Menepati KPI").length;
+      const lt = d.filter(a=>a.status==="Lewat").length;
+      const pct = d.length ? Math.round(ok/d.length*100)+"%" : "—";
+      return '<tr><td class="mono font-bold">'+j.code+'</td><td class="max-w-[420px] truncate">'+esc(j.name)+'</td>'+
+        '<td class="text-center">'+j.kpi+'</td><td class="text-center">'+f.length+'</td>'+
+        '<td class="text-center font-bold">'+avg+'</td><td class="text-center text-emerald-700 font-bold">'+ok+'</td>'+
+        '<td class="text-center text-red-700 font-bold">'+lt+'</td><td class="text-center font-extrabold">'+pct+'</td></tr>';
+    }).join("");
+    $("rawRingkasanBody").innerHTML = rows || '<tr><td colspan="8" class="text-center py-8 text-slate-400">Tiada data</td></tr>';
+  }
+  if(t==="cuti"){
+    const sorted = [...DB.cuti].sort((a,b)=>a.date.localeCompare(b.date));
+    $("rawCutiBody").innerHTML = sorted.length ? sorted.map(c=>{
+      const d = new Date(c.date+"T00:00:00");
+      return '<tr><td class="mono font-bold">'+c.date+'</td><td>'+esc(c.name)+'</td>'+
+        '<td>'+d.toLocaleDateString("ms-MY",{weekday:"long"})+'</td>'+
+        '<td class="text-[12px] text-red-700 font-bold">Tidak dikira oleh makro</td></tr>';
+    }).join("") : '<tr><td colspan="4" class="text-center py-8 text-slate-400">Tiada tarikh dikecualikan</td></tr>';
+  }
+}
+function viewRecord(id){
+  const a = DB.apps.find(x=>x.id===id); if(!a) return;
+  const e = enrich(a);
+  $("viewContent").innerHTML =
+    '<div class="flex items-start justify-between gap-3">'+
+      '<div><p class="text-[11px] font-extrabold tracking-widest text-gold-700">NO. RUJUKAN</p>'+
+      '<h3 class="font-extrabold text-lg mono">'+e.id+'</h3></div>'+
+      '<button onclick="closeModal(\'modalView\')" class="w-9 h-9 rounded-xl bg-slate-100 font-extrabold">✕</button>'+
+    '</div>'+
+    '<p class="text-sm font-bold mt-2">'+esc(e.jenisName)+'</p>'+
+    '<p class="text-xs text-slate-500 font-semibold">Kod '+e.jenisCode+' • '+esc(e.jenisCat)+'</p>'+
+    '<div class="divider-gold my-3"></div>'+
+    '<div class="grid grid-cols-2 gap-3 text-sm">'+
+      '<div><p class="text-[11px] font-extrabold text-slate-500">PEMOHON</p><p class="font-bold">'+esc(e.pemohon)+'</p></div>'+
+      '<div><p class="text-[11px] font-extrabold text-slate-500">NO. KP / ROC</p><p class="font-bold mono">'+esc(e.kp||"—")+'</p></div>'+
+      '<div><p class="text-[11px] font-extrabold text-slate-500">TELEFON</p><p class="font-bold mono">'+esc(e.tel||"—")+'</p></div>'+
+      '<div><p class="text-[11px] font-extrabold text-slate-500">PEJABAT</p><p class="font-bold">'+esc(e.pejabat)+'</p></div>'+
+      '<div><p class="text-[11px] font-extrabold text-slate-500">TARIKH MOHON</p><p class="font-bold mono">'+fmtDs(e.tarikhMohon)+'</p></div>'+
+      '<div><p class="text-[11px] font-extrabold text-slate-500">TARIKH LULUS</p><p class="font-bold mono">'+(e.tarikhLulus?fmtDs(e.tarikhLulus):"Belum diluluskan")+'</p></div>'+
+    '</div>'+
+    '<div class="mt-4 grid grid-cols-3 gap-2 text-center">'+
+      '<div class="rounded-xl bg-slate-50 border p-3"><p class="text-[10px] font-extrabold text-slate-500">HARI KALENDAR</p><p class="text-xl font-extrabold">'+e.kalendar+'</p></div>'+
+      '<div class="rounded-xl bg-navy-950 text-white p-3"><p class="text-[10px] font-extrabold text-gold-300">HARI BEKERJA</p><p class="text-xl font-extrabold">'+(e.bekerja!=null?e.bekerja:e.bekerjaNow+"*")+'</p></div>'+
+      '<div class="rounded-xl bg-slate-50 border p-3"><p class="text-[10px] font-extrabold text-slate-500">SASARAN KPI</p><p class="text-xl font-extrabold">'+e.kpi+'</p></div>'+
+    '</div>'+
+    '<div class="mt-3 flex items-center justify-between rounded-xl bg-slate-50 border p-3">'+
+      '<span class="text-xs font-bold text-slate-500">STATUS SEMASA</span>'+statusBadge(e.status)+
+    '</div>'+
+    (e.cutiList && e.cutiList.length ? '<div class="mt-3 rounded-xl bg-red-50 border border-red-200 p-3 text-[12px] font-semibold text-red-900">Tarikh dikecualikan: '+e.cutiList.map(c=>c.date+" ("+esc(c.name)+")").join(", ")+'</div>' : "")+
+    (e.catatan ? '<div class="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-[12px] font-semibold text-amber-900">Catatan: '+esc(e.catatan)+'</div>' : "")+
+    '<p class="mt-3 text-[11px] text-slate-400 font-semibold">Direkod oleh '+esc(e.pegawaiName||"—")+' • '+esc(e.pejabat)+'</p>'+
+    '<div class="flex gap-2 mt-4 no-print">'+
+      (isAdmin()?'<button onclick="closeModal(\'modalView\');askDelete(\''+e.id+'\')" class="flex-1 py-2.5 rounded-xl bg-red-50 text-red-700 font-extrabold text-sm">Padam Rekod</button>':'')+
+      '<button onclick="closeModal(\'modalView\')" class="flex-1 py-2.5 rounded-xl bg-navy-900 text-white font-extrabold text-sm">Tutup</button>'+
+    '</div>';
+  openModal("modalView");
+}
+function askDelete(id){
+  askConfirm("Padam rekod "+id+"?","Rekod akan dikeluarkan daripada Sheet Raw Data. Tindakan ini tidak boleh dibatalkan.",()=>{
+    DB.apps = DB.apps.filter(a=>a.id!==id);
+    persist();
+    logSync("Rekod "+id+" dipadam oleh "+(DB.session||"—"));
+    renderAll();
+    toast("Rekod "+id+" dipadam.");
+  });
+}
+
+/* ---- CUTI ---- */
+const MONTHS_MS = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
+function renderCuti(){
+  $("calTitle").textContent = MONTHS_MS[calM]+" "+calY;
+  const first = new Date(calY,calM,1);
+  const startIdx = (first.getDay()+6)%7;
+  const daysInMonth = new Date(calY,calM+1,0).getDate();
+  const cmap = cutiMap();
+  let html = "";
+  for(let i=0;i<42;i++){
+    const dayNum = i-startIdx+1;
+    if(dayNum<1 || dayNum>daysInMonth){ html += '<div class="cal-day other"></div>'; continue }
+    const d = new Date(calY,calM,dayNum);
+    const iso = isoDate(d);
+    const dow = d.getDay();
+    const isWeekend = (dow===6 && DB.settings.excludeSat) || (dow===0 && DB.settings.excludeSun);
+    const isHoliday = !!cmap[iso];
+    let cls = "cal-day ";
+    if(isHoliday) cls += "holiday";
+    else if(isWeekend) cls += "weekend";
+    else cls += "workday";
+    if(iso===todayStr()) cls += " today";
+    const title = isHoliday ? cmap[iso] : (isWeekend ? "Hujung minggu" : "Hari bekerja");
+    html += '<div class="'+cls+'" title="'+esc(title)+'" onclick="toggleCutiDate(\''+iso+'\')">'+
+      '<span>'+dayNum+'</span>'+
+      (isHoliday?'<span class="text-[8px] font-extrabold opacity-90">CUTI</span>':'')+
+    '</div>';
+  }
+  $("calGrid").innerHTML = html;
+
+  const list = [...DB.cuti].sort((a,b)=>a.date.localeCompare(b.date));
+  $("cutiList").innerHTML = list.length ? list.map(c=>{
+    const d = new Date(c.date+"T00:00:00");
+    return '<div class="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-2.5">'+
+      '<div class="w-9 h-9 rounded-lg bg-red-600 text-white flex items-center justify-center text-xs font-extrabold">'+c.date.slice(8)+'</div>'+
+      '<div class="min-w-0 flex-1"><p class="font-extrabold text-[13px] truncate">'+esc(c.name)+'</p>'+
+      '<p class="text-[11px] text-slate-500 mono">'+c.date+' • '+d.toLocaleDateString("ms-MY",{weekday:"long"})+'</p></div>'+
+      '<button onclick="removeCuti(\''+c.date+'\')" class="w-8 h-8 rounded-lg bg-white border font-extrabold text-red-600">✕</button>'+
+    '</div>';
+  }).join("") : '<p class="text-xs text-slate-400 font-semibold">Tiada tarikh dikecualikan.</p>';
+}
+function moveCal(dir){ calM += dir; if(calM<0){calM=11;calY--} if(calM>11){calM=0;calY++} renderCuti() }
+function goTodayCal(){ const d=new Date(); calY=d.getFullYear(); calM=d.getMonth(); renderCuti() }
+function toggleCutiDate(iso){
+  const idx = DB.cuti.findIndex(c=>c.date===iso);
+  if(idx>=0){
+    DB.cuti.splice(idx,1);
+    logSync("Tarikh "+iso+" dibuang daripada senarai dikecualikan.");
+  } else {
+    const name = prompt("Nama / sebab tarikh dikecualikan untuk "+iso+":","Cuti Umum / Tarikh Dikecualikan");
+    if(name===null) return;
+    DB.cuti.push({date:iso,name:name||"Tarikh Dikecualikan"});
+    logSync("Tarikh "+iso+" ditanda dikecualikan ("+(name||"Tarikh Dikecualikan")+").");
+  }
+  persist(); renderCuti(); renderAll(); updateNotifCount();
+}
+function addCuti(){
+  const date = $("cutiDate").value, name = $("cutiName").value.trim();
+  if(!date){ toast("Pilih tarikh.","err"); return }
+  if(!name){ toast("Isi nama / sebab tarikh dikecualikan.","err"); return }
+  if(DB.cuti.some(c=>c.date===date)){ toast("Tarikh sudah ditanda.","err"); return }
+  DB.cuti.push({date,name});
+  $("cutiName").value = "";
+  persist(); renderCuti(); renderAll();
+  logSync("Tarikh dikecualikan ditambah: "+date+" — "+name);
+  toast("Tarikh "+date+" ditanda dikecualikan.");
+}
+function removeCuti(date){
+  DB.cuti = DB.cuti.filter(c=>c.date!==date);
+  persist(); renderCuti(); renderAll();
+  toast("Tarikh "+date+" dibuang.");
+}
+function clearCuti(){
+  askConfirm("Padam semua tarikh dikecualikan?","Makro akan mengira semua hari bekerja tanpa pengecualian cuti.",()=>{
+    DB.cuti = []; persist(); renderCuti(); renderAll(); toast("Semua tarikh dikecualikan dipadam.");
+  });
+}
+function importCutiSarawak(){
+  const added = [];
+  DEFAULT_CUTI.forEach(c=>{ if(!DB.cuti.some(x=>x.date===c.date)){ DB.cuti.push({...c}); added.push(c.date) } });
+  persist(); renderCuti(); renderAll();
+  logSync("Import cuti Sarawak 2026: "+added.length+" tarikh baharu.");
+  toast(added.length ? added.length+" tarikh cuti Sarawak diimport." : "Semua tarikh cuti sudah wujud.","info");
+}
+function saveSettingsFromCuti(){
+  DB.settings.excludeSat = $("chkSat").checked;
+  DB.settings.excludeSun = $("chkSun").checked;
+  $("setSat").checked = DB.settings.excludeSat;
+  $("setSun").checked = DB.settings.excludeSun;
+  persist(); renderCuti(); renderAll();
+}
+
+/* ---- JENIS ADMIN ---- */
+function renderJenisAdmin(){
+  const q = ($("jenisSearchAdmin").value||"").toLowerCase(), cat = $("jenisCatFilter").value;
+  const list = DB.jenis.filter(j=>(!cat||j.cat===cat)&&(!q||j.name.toLowerCase().includes(q)||j.code.includes(q)));
+  $("jenisCount").textContent = DB.jenis.filter(j=>j.active).length+" jenis aktif";
+  $("jenisGrid").innerHTML = list.map(j=>{
+    const f = DB.apps.filter(a=>a.jenisCode===j.code);
+    return '<div class="bg-white rounded-2xl border shadow-card p-5">'+
+      '<div class="flex items-start gap-3">'+
+        '<div class="w-12 h-12 shrink-0 rounded-xl bg-navy-950 text-gold-300 flex items-center justify-center font-extrabold">'+j.code+'</div>'+
+        '<div class="min-w-0 flex-1">'+
+          '<p class="font-extrabold text-[14px] leading-snug">'+esc(j.name)+'</p>'+
+          '<p class="text-[11px] font-bold text-slate-500 mt-1">'+esc(j.cat)+'</p>'+
+        '</div>'+
+      '</div>'+
+      '<div class="flex flex-wrap gap-2 mt-3">'+
+        '<span class="badge b-blue">KPI '+j.kpi+' hari</span>'+
+        (j.custom?'<span class="badge b-amber">FLEKSIBEL</span>':'<span class="badge b-green">TETAP</span>')+
+        '<span class="badge b-gray">'+f.length+' rekod</span>'+
+        (j.active?'':'<span class="badge b-red">TIDAK AKTIF</span>')+
+      '</div>'+
+      '<div class="grid grid-cols-3 gap-2 mt-3 no-print">'+
+        '<button onclick="openJenisModal(\''+j.code+'\')" class="py-2 rounded-xl bg-navy-900 text-white text-[11px] font-extrabold">Kemaskini</button>'+
+        '<button onclick="toggleJenisActive(\''+j.code+'\')" class="py-2 rounded-xl bg-slate-100 text-[11px] font-extrabold">'+(j.active?"Nyah Aktif":"Aktifkan")+'</button>'+
+        '<button onclick="deleteJenis(\''+j.code+'\')" class="py-2 rounded-xl bg-red-50 text-red-700 text-[11px] font-extrabold">Padam</button>'+
+      '</div>'+
+    '</div>';
+  }).join("") || '<div class="bg-white rounded-2xl border p-8 text-center text-slate-400 font-bold">Tiada jenis sepadan.</div>';
+}
+function openJenisModal(code){
+  editingJenis = code || null;
+  const j = code ? getJenis(code) : null;
+  $("jenisModalTitle").textContent = j ? "Kemaskini Jenis Permohonan" : "Tambah Jenis Permohonan";
+  $("jName").value = j ? j.name : "";
+  $("jCat").value = j ? j.cat : CATS[0];
+  $("jKpi").value = j ? j.kpi : 7;
+  $("jCustom").checked = j ? !!j.custom : false;
+  openModal("modalJenis");
+}
+function saveJenis(){
+  const name = $("jName").value.trim(), cat = $("jCat").value.trim()||CATS[0], kpi = parseInt($("jKpi").value);
+  if(!name){ toast("Isi nama jenis permohonan.","err"); return }
+  if(isNaN(kpi)||kpi<0){ toast("Tempoh KPI tidak sah.","err"); return }
+  if(editingJenis){
+    const j = getJenis(editingJenis);
+    j.name = name; j.cat = cat; j.kpi = kpi; j.custom = $("jCustom").checked;
+    logSync("Jenis "+j.code+" dikemaskini (KPI "+kpi+" hari).");
+    toast("Jenis "+j.code+" dikemaskini.");
+  } else {
+    const max = Math.max(0,...DB.jenis.map(x=>parseInt(x.code)||0));
+    const code = String(max+1).padStart(2,"0");
+    DB.jenis.push({code,name,cat,kpi,custom:$("jCustom").checked,active:true});
+    logSync("Jenis baharu ditambah: "+code+" — "+name+" (KPI "+kpi+" hari).");
+    toast("Jenis baharu "+code+" ditambah.");
+  }
+  persist(); closeModal("modalJenis");
+  buildFilterSelects(); renderJenisOptions(); renderJenisAdmin(); renderAll();
+}
+function toggleJenisActive(code){
+  const j = getJenis(code); j.active = !j.active;
+  persist(); renderJenisAdmin(); renderJenisOptions(); renderAll();
+  toast("Jenis "+code+(j.active?" diaktifkan.":" dinyahaktifkan."));
+}
+function deleteJenis(code){
+  const used = DB.apps.some(a=>a.jenisCode===code);
+  askConfirm("Padam jenis "+code+"?", used ? "Terdapat rekod permohonan menggunakan jenis ini. Rekod kekal tetapi jenis akan dipaparkan sebagai (Dipadam)." : "Jenis ini akan dipadamkan sepenuhnya.",()=>{
+    DB.jenis = DB.jenis.filter(j=>j.code!==code);
+    persist(); buildFilterSelects(); renderJenisOptions(); renderJenisAdmin(); renderAll();
+    toast("Jenis "+code+" dipadam.");
+  });
+}
+
+/* ---- PENGGUNA ---- */
+function renderPengguna(){
+  const q = ($("userSearch").value||"").toLowerCase();
+  const list = DB.users.filter(u=>!q || (u.name+u.uid+u.office).toLowerCase().includes(q));
+  $("userCount").textContent = DB.users.length;
+  $("penggunaTableBody").innerHTML = list.map(u=>
+    '<tr>'+
+      '<td><div class="flex items-center gap-3">'+
+        '<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-400 to-gold-700 flex items-center justify-center font-extrabold text-navy-950 text-xs shrink-0">'+esc(u.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase())+'</div>'+
+        '<span class="font-bold">'+esc(u.name)+'</span></div></td>'+
+      '<td class="mono font-bold">'+esc(u.uid)+'</td>'+
+      '<td class="text-xs">'+esc(u.office)+'</td>'+
+      '<td>'+(u.role==="admin"?'<span class="badge b-amber">ADMIN</span>':'<span class="badge b-blue">PENGGUNA</span>')+'</td>'+
+      '<td class="text-xs max-w-[220px]">'+((u.assigned||[]).includes("all")?'<span class="font-bold text-emerald-700">Semua 25 jenis</span>':esc((u.assigned||[]).map(c=>{const j=getJenis(c);return j?c:""}).filter(Boolean).join(", ")||"—"))+'</td>'+
+      '<td class="text-xs text-slate-500">'+esc(u.lastLogin||"—")+'</td>'+
+      '<td class="no-print">'+
+        '<button onclick="openUserModal(\''+u.uid+'\')" class="px-2.5 py-1 rounded-lg bg-navy-900 text-white text-[11px] font-extrabold">Kemaskini</button> '+
+        (DB.session!==u.uid?'<button onclick="askDeleteUser(\''+u.uid+'\')" class="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 text-[11px] font-extrabold">Padam</button>':'')+
+      '</td>'+
+    '</tr>'
+  ).join("") || '<tr><td colspan="7" class="text-center py-8 text-slate-400 font-bold">Tiada pengguna sepadan.</td></tr>';
+}
+function openUserModal(uid){
+  editingUser = uid || null;
+  const u = uid ? DB.users.find(x=>x.uid===uid) : null;
+  $("userModalTitle").textContent = u ? "Kemaskini Pengguna — "+u.uid : "Tambah Pengguna Baharu";
+  $("uName").value = u ? u.name : "";
+  $("uId").value = u ? u.uid : "";
+  $("uOffice").value = u ? u.office : OFFICES[0];
+  $("uRole").value = u ? u.role : "user";
+  $("uPass").value = "";
+  $("uJenisList").innerHTML = DB.jenis.map(j=>{
+    const checked = u ? ((u.assigned||[]).includes("all") || (u.assigned||[]).includes(j.code)) : true;
+    return '<label class="flex items-start gap-2"><input type="checkbox" class="uJenisChk mt-0.5 w-4 h-4 accent-amber-600" value="'+j.code+'" '+(checked?'checked':'')+'>'+
+      '<span><b>'+j.code+'</b> — '+esc(j.name.slice(0,70))+(j.name.length>70?'...':'')+' <span class="text-slate-400">(KPI '+j.kpi+'h)</span></span></label>';
+  }).join("");
+  openModal("modalUser");
+}
+function checkAllJenis(v){ document.querySelectorAll(".uJenisChk").forEach(c=>c.checked=v) }
+function saveUser(){
+  const name = $("uName").value.trim(), uid = $("uId").value.trim().toUpperCase(), off = $("uOffice").value,
+        role = $("uRole").value, pass = $("uPass").value.trim();
+  if(!name||!uid){ toast("Nama dan ID pengguna wajib diisi.","err"); return }
+  if(pass && pass.length<6){ toast("Kata laluan minima 6 aksara.","err"); return }
+  const assigned = [...document.querySelectorAll(".uJenisChk:checked")].map(c=>c.value);
+  const allChecked = assigned.length === DB.jenis.length;
+  const finalAssigned = allChecked ? ["all"] : (assigned.length ? assigned : ["all"]);
+
+  if(editingUser){
+    const u = DB.users.find(x=>x.uid===editingUser);
+    if(uid!==editingUser && DB.users.some(x=>x.uid===uid)){ toast("ID pengguna telah wujud.","err"); return }
+    u.name = name; u.uid = uid; u.office = off; u.role = role; u.assigned = finalAssigned;
+    if(pass) u.password = pass;
+    if(DB.session===editingUser && uid!==editingUser){ DB.session = uid; save("spk_sess",uid) }
+    logSync("Pengguna "+uid+" dikemaskini oleh admin.");
+    toast("Pengguna "+uid+" dikemaskini.");
+  } else {
+    if(DB.users.some(x=>x.uid===uid)){ toast("ID pengguna telah wujud.","err"); return }
+    DB.users.push({name,uid,office:off,role,password:pass||genPass(),assigned:finalAssigned,lastLogin:"—",created:todayStr()});
+    logSync("Pengguna baharu ditambah: "+uid+" ("+role+").");
+    toast("Pengguna "+uid+" ditambah.");
+  }
+  persist(); closeModal("modalUser"); renderPengguna();
+}
+function askDeleteUser(uid){
+  askConfirm("Padam pengguna "+uid+"?","Akaun akan dipadamkan dan tidak boleh log masuk lagi.",()=>{
+    DB.users = DB.users.filter(u=>u.uid!==uid);
+    persist(); renderPengguna();
+    toast("Pengguna "+uid+" dipadam.");
+  });
+}
+
+/* ---- TETAPAN ---- */
+function saveSettings(){
+  DB.settings.office = $("setOffice").value.trim()||OFFICES[0];
+  DB.settings.excludeSat = $("setSat").checked;
+  DB.settings.excludeSun = $("setSun").checked;
+  $("chkSat").checked = DB.settings.excludeSat;
+  $("chkSun").checked = DB.settings.excludeSun;
+  persist(); renderAll(); renderCuti();
+  logSync("Tetapan sistem dikemaskini.");
+  toast("Tetapan disimpan.");
+}
+function resetDemo(){
+  askConfirm("Set semula data demo?","Semua jenis, cuti, pengguna dan permohonan akan dikembalikan kepada data asal.",()=>{
+    ["spk_users","spk_apps","spk_jenis","spk_cuti","spk_set","spk_log","spk_server_store"].forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  });
+}
+function clearApps(){
+  askConfirm("Padam semua permohonan?","Sheet Raw Data akan dikosongkan. Tindakan ini tidak boleh dibatalkan.",()=>{
+    DB.apps = []; persist(); renderAll();
+    logSync("Semua rekod permohonan dipadam oleh admin.");
+    toast("Semua permohonan dipadam.");
+  });
+}
+
+/* ================================================================
+   LAPORAN
+================================================================ */
+function generateReport(){
+  if(!isAdmin()){ toast("Penjanaan laporan penuh khusus untuk Admin.","err"); return }
+  const dari = $("lapDari").value, hingga = $("lapHingga").value, jenis = $("lapJenis").value,
+        status = $("lapStatus").value, pejabat = $("lapPejabat").value;
+
+  let rows = DB.apps.map(enrich);
+  if(dari) rows = rows.filter(a=>a.tarikhMohon>=dari);
+  if(hingga) rows = rows.filter(a=>a.tarikhMohon<=hingga);
+  if(jenis) rows = rows.filter(a=>a.jenisCode===jenis);
+  if(status) rows = rows.filter(a=>a.status===status);
+  if(pejabat) rows = rows.filter(a=>a.pejabat===pejabat);
+  rows.sort((a,b)=>a.tarikhMohon.localeCompare(b.tarikhMohon));
+  lastReport = rows;
+
+  const done = rows.filter(a=>a.bekerja!=null);
+  const ok = done.filter(a=>a.status==="Menepati KPI").length;
+  const late = done.filter(a=>a.status==="Lewat").length;
+  const proc = rows.filter(a=>a.bekerja==null).length;
+  const pct = done.length ? Math.round(ok/done.length*100) : 0;
+  const avgDays = done.length ? (done.reduce((s,a)=>s+a.bekerja,0)/done.length).toFixed(1) : "—";
+
+  $("lapEmpty").classList.add("hidden");
+  $("lapResult").classList.remove("hidden");
+  document.querySelectorAll(".page").forEach(s=>s.classList.add("hidden"));
+  $("page-laporan").classList.remove("hidden");
+  $("pageTitle").textContent = TITLES.laporan;
+
+  $("lapSummaryCards").innerHTML = [
+    ["JUMLAH REKOD", rows.length, "text-navy-900"],
+    ["SELESAI", done.length, "text-navy-900"],
+    ["MENEPATI KPI", ok, "text-emerald-700"],
+    ["LEWAT", late, "text-red-700"],
+    ["% PEMATUHAN", pct+"%", "text-gold-700"]
+  ].map(c=>'<div class="kpi-card bg-white rounded-2xl border shadow-card p-4"><p class="text-[10px] font-extrabold tracking-widest text-slate-500">'+c[0]+'</p><p class="text-2xl font-extrabold mt-1 '+c[2]+'">'+c[1]+'</p></div>').join("");
+
+  $("lapMeta").innerHTML =
+    '<p>Tempoh laporan: <b class="text-gold-300">'+(dari?fmtDs(dari):"awal")+' → '+(hingga?fmtDs(hingga):"kini")+'</b></p>'+
+    '<p>Jenis ditapis: <b class="text-gold-300">'+(jenis?jenis+" — "+esc((getJenis(jenis)||{}).name||""):"Semua")+'</b></p>'+
+    '<p>Status: <b class="text-gold-300">'+(status||"Semua")+'</b> • Pejabat: <b class="text-gold-300">'+(pejabat||"Semua")+'</b></p>'+
+    '<p>Purata hari bekerja: <b class="text-gold-300">'+avgDays+' hari</b></p>'+
+    '<p>Dalam proses: <b class="text-gold-300">'+proc+' rekod</b></p>'+
+    '<p>Dijana: <b class="text-gold-300">'+new Date().toLocaleString("ms-MY")+'</b></p>'+
+    '<p>Oleh: <b class="text-gold-300">'+esc((curUser()||{}).name||"—")+'</b></p>';
+
+  const codes = [...new Set(rows.map(a=>a.jenisCode))].sort();
+  $("lapJenisTableBody").innerHTML = codes.map(code=>{
+    const j = getJenis(code);
+    const f = rows.filter(a=>a.jenisCode===code);
+    const fj = f.filter(a=>a.bekerja!=null);
+    const avg = fj.length ? (fj.reduce((s,a)=>s+a.bekerja,0)/fj.length).toFixed(1) : "—";
+    const mn = fj.length ? Math.min(...fj.map(a=>a.bekerja)) : "—";
+    const mx = fj.length ? Math.max(...fj.map(a=>a.bekerja)) : "—";
+    const o = fj.filter(a=>a.status==="Menepati KPI").length;
+    const l = fj.filter(a=>a.status==="Lewat").length;
+    const p = fj.length ? Math.round(o/fj.length*100)+"%" : "—";
+    return '<tr><td class="max-w-[420px] truncate"><span class="mono font-bold text-gold-700">'+code+'</span> '+esc(j?j.name:"(Dipadam)")+'</td>'+
+      '<td class="text-center">'+(j?j.kpi:"—")+'</td><td class="text-center">'+f.length+'</td>'+
+      '<td class="text-center font-bold">'+avg+'</td><td class="text-center text-xs">'+mn+' – '+mx+'</td>'+
+      '<td class="text-center text-emerald-700 font-bold">'+o+'</td><td class="text-center text-red-700 font-bold">'+l+'</td>'+
+      '<td class="text-center font-extrabold">'+p+'</td></tr>';
+  }).join("") || '<tr><td colspan="8" class="text-center py-8 text-slate-400">Tiada data</td></tr>';
+
+  $("lapDetailCount").textContent = "("+rows.length+" rekod)";
+  $("lapDetailBody").innerHTML = rows.map((a,i)=>
+    '<tr><td class="text-slate-400 font-bold">'+(i+1)+'</td>'+
+    '<td class="mono font-bold">'+a.id+'</td>'+
+    '<td class="max-w-[280px] truncate"><span class="mono font-bold text-gold-700">'+a.jenisCode+'</span> '+esc(a.jenisName)+'</td>'+
+    '<td>'+esc(a.pemohon)+'</td>'+
+    '<td class="mono text-xs">'+fmtDs(a.tarikhMohon)+'</td>'+
+    '<td class="mono text-xs">'+(a.tarikhLulus?fmtDs(a.tarikhLulus):"—")+'</td>'+
+    '<td class="text-center">'+a.kalendar+'</td>'+
+    '<td class="text-center font-extrabold">'+(a.bekerja!=null?a.bekerja:a.bekerjaNow+"*")+'</td>'+
+    '<td class="text-center font-bold">'+a.kpi+'</td>'+
+    '<td class="text-center '+(a.varians==null?"text-slate-400":(a.varians<=0?"text-emerald-700":"text-red-700"))+' font-bold">'+(a.varians==null?"—":(a.varians>0?"+":"")+a.varians)+'</td>'+
+    '<td>'+statusBadge(a.status)+'</td>'+
+    '<td class="text-xs">'+esc(a.pegawaiName||"—")+'</td></tr>'
+  ).join("") || '<tr><td colspan="12" class="text-center py-8 text-slate-400">Tiada rekod</td></tr>';
+
+  if(chL) chL.destroy();
+  const labels = codes.map(c=>c+" • "+((getJenis(c)||{}).name||"").slice(0,20));
+  const pcts = codes.map(code=>{
+    const fj = rows.filter(a=>a.jenisCode===code && a.bekerja!=null);
+    return fj.length ? Math.round(fj.filter(a=>a.status==="Menepati KPI").length/fj.length*100) : 0;
+  });
+  chL = new Chart($("chartLap"),{
+    type:"bar",
+    data:{labels,datasets:[{label:"% Pematuhan",data:pcts,backgroundColor:"#0ea5a0",borderRadius:8}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100}}}
+  });
+
+  logSync("Laporan dijana: "+rows.length+" rekod ("+(dari||"awal")+" → "+(hingga||"kini")+").");
+  toast("Laporan dijana: "+rows.length+" rekod.");
+}
+
+/* ================================================================
+   EKSPORT EXCEL
+================================================================ */
+function rawRows(){
+  return DB.apps.map(enrich).sort((a,b)=>a.tarikhMohon.localeCompare(b.tarikhMohon)).map((a,i)=>({
+    "Bil": i+1,
+    "No. Rujukan": a.id,
+    "Kod Jenis": a.jenisCode,
+    "Jenis Permohonan": a.jenisName,
+    "Kategori": a.jenisCat,
+    "Pemohon / Syarikat": a.pemohon,
+    "No. KP / ROC": a.kp||"",
+    "No. Telefon": a.tel||"",
+    "Pejabat": a.pejabat,
+    "Tarikh Mohon": fmtDs(a.tarikhMohon),
+    "Tarikh Lulus": a.tarikhLulus?fmtDs(a.tarikhLulus):"",
+    "Hari Kalendar": a.kalendar,
+    "Hari Bekerja (Macro)": a.bekerja!=null?a.bekerja:a.bekerjaNow,
+    "KPI (Hari)": a.kpi,
+    "Varians": a.varians==null?"":a.varians,
+    "Status": a.status,
+    "Pegawai": a.pegawaiName||"",
+    "Catatan": a.catatan||""
+  }));
+}
+function autosize(ws,rows){
+  const keys = Object.keys(rows[0]||{});
+  ws["!cols"] = keys.map(k=>{
+    let w = k.length+2;
+    rows.forEach(r=>{ w = Math.max(w, String(r[k]??"").length+2) });
+    return {wch: Math.min(w,60)};
+  });
+}
+function exportRawExcel(){
+  const rows = rawRows();
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  autosize(ws,rows);
+  XLSX.utils.book_append_sheet(wb,ws,"RAW_DATA");
+  const cutiRows = [...DB.cuti].sort((a,b)=>a.date.localeCompare(b.date)).map(c=>({
+    "Tarikh": c.date, "Nama Cuti / Sebab": c.name,
+    "Hari": new Date(c.date+"T00:00:00").toLocaleDateString("ms-MY",{weekday:"long"})
+  }));
+  const ws2 = XLSX.utils.json_to_sheet(cutiRows);
+  autosize(ws2,cutiRows);
+  XLSX.utils.book_append_sheet(wb,ws2,"CUTI_DIKECUALIKAN");
+  XLSX.writeFile(wb,"SPK-Sarawak-RawData-"+todayStr()+".xlsx");
+  logSync("Eksport Excel RAW_DATA ("+rows.length+" rekod).");
+  toast("Fail Excel Raw Data dimuat turun.");
+}
+function exportLaporanExcel(){
+  if(!lastReport.length){ toast("Jana laporan terlebih dahulu.","err"); return }
+  const rows = lastReport;
+  const wb = XLSX.utils.book_new();
+
+  /* Sheet 1: RINGKASAN */
+  const done = rows.filter(a=>a.bekerja!=null);
+  const ok = done.filter(a=>a.status==="Menepati KPI").length;
+  const late = done.filter(a=>a.status==="Lewat").length;
+  const proc = rows.filter(a=>a.bekerja==null).length;
+  const pct = done.length ? Math.round(ok/done.length*100) : 0;
+  const avg = done.length ? (done.reduce((s,a)=>s+a.bekerja,0)/done.length).toFixed(2) : "-";
+  const ringkasan = [
+    {Petunjuk:"Tajuk Laporan",Nilai:"Laporan Keseluruhan Pematuhan KPI Permohonan"},
+    {Petunjuk:"Jenis Permohonan Ditapis",Nilai:$("lapJenis").value?($("lapJenis").value+" — "+((getJenis($("lapJenis").value)||{}).name||"")):"Semua"},
+    {Petunjuk:"Status Ditapis",Nilai:$("lapStatus").value||"Semua"},
+    {Petunjuk:"Pejabat Ditapis",Nilai:$("lapPejabat").value||"Semua"},
+    {Petunjuk:"Tarikh Dari",Nilai:$("lapDari").value||"-"},
+    {Petunjuk:"Tarikh Hingga",Nilai:$("lapHingga").value||"-"},
+    {Petunjuk:"Jumlah Rekod",Nilai:rows.length},
+    {Petunjuk:"Rekod Selesai (ada tarikh lulus)",Nilai:done.length},
+    {Petunjuk:"Menepati KPI",Nilai:ok},
+    {Petunjuk:"Lewat",Nilai:late},
+    {Petunjuk:"Dalam Proses (belum lulus)",Nilai:proc},
+    {Petunjuk:"Kadar Pematuhan (%)",Nilai:pct},
+    {Petunjuk:"Purata Hari Bekerja",Nilai:avg},
+    {Petunjuk:"Dijana Oleh",Nilai:(curUser()||{}).name||"-"},
+    {Petunjuk:"Tarikh Jana",Nilai:new Date().toLocaleString("ms-MY")}
+  ];
+  const ws1 = XLSX.utils.json_to_sheet(ringkasan);
+  autosize(ws1,ringkasan);
+  XLSX.utils.book_append_sheet(wb,ws1,"RINGKASAN");
+
+  /* Sheet 2: SENARAI_DETAIL */
+  const detail = rows.map((a,i)=>({
+    "Bil":i+1,
+    "No. Rujukan":a.id,
+    "Kod Jenis":a.jenisCode,
+    "Jenis Permohonan":a.jenisName,
+    "Kategori":a.jenisCat,
+    "Pemohon / Syarikat":a.pemohon,
+    "No. KP / ROC":a.kp||"",
+    "No. Telefon":a.tel||"",
+    "Pejabat":a.pejabat,
+    "Tarikh Mohon":fmtDs(a.tarikhMohon),
+    "Tarikh Lulus":a.tarikhLulus?fmtDs(a.tarikhLulus):"",
+    "Hari Kalendar":a.kalendar,
+    "Hari Bekerja (Macro)":a.bekerja!=null?a.bekerja:a.bekerjaNow,
+    "KPI (Hari)":a.kpi,
+    "Varians":a.varians==null?"":a.varians,
+    "Status":a.status,
+    "Pegawai":a.pegawaiName||"",
+    "Catatan":a.catatan||""
+  }));
+  const ws2 = XLSX.utils.json_to_sheet(detail);
+  autosize(ws2,detail);
+  XLSX.utils.book_append_sheet(wb,ws2,"SENARAI_DETAIL");
+
+  /* Sheet 3: IKUT_JENIS */
+  const codes = [...new Set(rows.map(a=>a.jenisCode))].sort();
+  const ikutJenis = codes.map(code=>{
+    const j = getJenis(code);
+    const f = rows.filter(a=>a.jenisCode===code);
+    const fj = f.filter(a=>a.bekerja!=null);
+    return {
+      "Kod":code,
+      "Jenis Permohonan":j?j.name:"(Dipadam)",
+      "Kategori":j?j.cat:"-",
+      "KPI (Hari)":j?j.kpi:"-",
+      "Bilangan":f.length,
+      "Purata Hari Bekerja":fj.length?(fj.reduce((s,a)=>s+a.bekerja,0)/fj.length).toFixed(2):"-",
+      "Min Hari":fj.length?Math.min(...fj.map(a=>a.bekerja)):"-",
+      "Max Hari":fj.length?Math.max(...fj.map(a=>a.bekerja)):"-",
+      "Menepati KPI":fj.filter(a=>a.status==="Menepati KPI").length,
+      "Lewat":fj.filter(a=>a.status==="Lewat").length,
+      "Dalam Proses":f.filter(a=>a.bekerja==null).length,
+      "% Pematuhan":fj.length?Math.round(fj.filter(a=>a.status==="Menepati KPI").length/fj.length*100):"-"
+    };
+  });
+  const ws3 = XLSX.utils.json_to_sheet(ikutJenis);
+  autosize(ws3,ikutJenis);
+  XLSX.utils.book_append_sheet(wb,ws3,"IKUT_JENIS");
+
+  /* Sheet 4: CUTI_DIKECUALIKAN */
+  const cutiRows = [...DB.cuti].sort((a,b)=>a.date.localeCompare(b.date)).map(c=>({
+    "Tarikh":c.date,
+    "Nama Cuti / Sebab":c.name,
+    "Hari":new Date(c.date+"T00:00:00").toLocaleDateString("ms-MY",{weekday:"long"}),
+    "Kesan": "Tidak dikira oleh makro NETWORKDAYS"
+  }));
+  const ws4 = XLSX.utils.json_to_sheet(cutiRows.length?cutiRows:[{"Tarikh":"-","Nama Cuti / Sebab":"Tiada rekod","Hari":"-","Kesan":"-"}]);
+  autosize(ws4,cutiRows.length?cutiRows:[{"Tarikh":"-","Nama Cuti / Sebab":"Tiada rekod","Hari":"-","Kesan":"-"}]);
+  XLSX.utils.book_append_sheet(wb,ws4,"CUTI_DIKECUALIKAN");
+
+  /* Sheet 5: INFO_SISTEM */
+  const info = [
+    {Perkara:"Nama Sistem",Nilai:"SPK Sarawak — Sistem Pengurusan KPI & Tempoh Permohonan"},
+    {Perkara:"Versi",Nilai:"4.0"},
+    {Perkara:"Alamat Pelayan",Nilai:DB.settings.serverUrl||"http://localhost:3000"},
+    {Perkara:"Pejabat Utama",Nilai:DB.settings.office||"-"},
+    {Perkara:"Kecualikan Sabtu",Nilai:DB.settings.excludeSat?"YA":"TIDAK"},
+    {Perkara:"Kecualikan Ahad",Nilai:DB.settings.excludeSun?"YA":"TIDAK"},
+    {Perkara:"Jumlah Pengguna",Nilai:DB.users.length},
+    {Perkara:"Jumlah Jenis Permohonan",Nilai:DB.jenis.length},
+    {Perkara:"Jumlah Rekod Raw Data",Nilai:DB.apps.length},
+    {Perkara:"Formula Macro",Nilai:"NETWORKDAYS(TarikhMohon, TarikhLulus, CutiDikecualikan) — tolak hujung minggu & tarikh dikecualikan"},
+    {Perkara:"Penyegerakan Terakhir",Nilai:DB.settings.lastSync?new Date(DB.settings.lastSync).toLocaleString("ms-MY"):"-"}
+  ];
+  const ws5 = XLSX.utils.json_to_sheet(info);
+  autosize(ws5,info);
+  XLSX.utils.book_append_sheet(wb,ws5,"INFO_SISTEM");
+
+  XLSX.writeFile(wb,"SPK-Sarawak-Laporan-KPI-"+todayStr()+".xlsx");
+  logSync("Eksport laporan Excel 5 sheet ("+rows.length+" rekod).");
+  toast("Laporan Excel (5 sheet) dimuat turun.");
+}
+
+/* ================================================================
+   BOOT
+================================================================ */
+window.addEventListener("load",()=>{
+  setTimeout(()=>{
+    const ld = $("loader");
+    ld.style.opacity = "0";
+    setTimeout(()=>ld.remove(),520);
+
+    if(DB.session && DB.users.some(u=>u.uid===DB.session)){
+      $("loginView").classList.add("hidden");
+      $("appView").classList.remove("hidden");
+      initApp();
+    } else {
+      $("loginView").classList.remove("hidden");
+      $("loginView").classList.add("lg:grid");
+    }
+  },900);
+});
+
+/* keyboard shortcut: Enter pada login */
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter" && !$("loginView").classList.contains("hidden") && !$("paneLogin").classList.contains("hidden")){
+    doLogin();
+  }
+  if(e.key==="Escape"){
+    ["modalMacro","modalView","modalJenis","modalUser","modalConfirm"].forEach(id=>closeModal(id));
+    $("notifDrop").classList.add("hidden");
+  }
+});
+</script>
+</body>
+</html>
